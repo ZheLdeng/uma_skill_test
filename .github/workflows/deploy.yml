@@ -3,7 +3,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: # 手动触发（“更新数据”按钮跳转到这里点 Run workflow）
+  schedule:
+    - cron: "0 20 * * *" # 每天 UTC 20:00（北京时间次日 04:00）自动刷新数据
 
 # 允许 workflow 部署到 Pages
 permissions:
@@ -28,6 +30,16 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      # 部署前拉取最新数据（gamewith + GameTora + bilibili wiki）。
+      # 数据源临时不可用时不阻断部署，回退用仓库里已提交的 JSON。
+      - name: Refresh skill data (gamewith)
+        run: npm run update-skills
+        continue-on-error: true
+
+      - name: Refresh support-card & CN data (GameTora + bwiki)
+        run: npm run update-support-cards
+        continue-on-error: true
 
       - run: npm run build
 

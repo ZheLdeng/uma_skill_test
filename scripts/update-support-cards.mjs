@@ -103,7 +103,8 @@ async function fetchBwikiCardCn() {
     const id = tplField(content, "ID");
     const cn = tplField(content, "中文名");
     const charCn = tplField(content, "关联角色");
-    if (id && cn) map.set(id, { cn, charCn });
+    // 最新卡常只填了角色中文名(关联角色)而没填完整中文名(中文名)，也要收录
+    if (id && (cn || charCn)) map.set(id, { cn, charCn });
   }
   return map;
 }

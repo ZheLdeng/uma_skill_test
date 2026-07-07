@@ -169,6 +169,18 @@ function App() {
     setAdaptability(cloneAdaptability());
   };
 
+  // 把当前结果表里的技能全部设为某 Hint 等级（空则清空）
+  const setAllHint = (level) => {
+    setHints((current) => {
+      const next = { ...current };
+      for (const row of rows) {
+        if (level === null) delete next[row.name];
+        else next[row.name] = level;
+      }
+      return next;
+    });
+  };
+
   return (
     <main className="app">
       <section className="topbar">
@@ -383,6 +395,12 @@ function App() {
               <input type="checkbox" checked={ownedOnly} onChange={(event) => setOwnedOnly(event.target.checked)} />
               仅持有
             </label>
+            <button className="button secondary" onClick={() => setAllHint(5)} type="button">
+              全部 Hint5
+            </button>
+            <button className="button ghost" onClick={() => setAllHint(null)} type="button">
+              清空 Hint
+            </button>
           </div>
         </div>
       </section>
