@@ -1,18 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Clipboard,
-  FileImage,
-  Loader2,
-  Monitor,
-  RotateCcw,
-  Search,
-  Sparkles,
-  Square,
-  Upload,
-  X,
-} from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Plus, RotateCcw, Search, Sparkles, X } from "lucide-react";
 import skills from "./data/skills.json";
 import upgradeMap from "./data/upgrade-map.json";
+import supportCards from "./data/support-cards.json";
 import {
   calculateSkillRows,
   DEFAULT_ADAPTABILITY,
@@ -22,11 +12,6 @@ import {
   STYLES,
   TRACKS,
 } from "./lib/scoring.js";
-import {
-  createSkillIndex,
-  extractGameState,
-  recognizeScreenshot,
-} from "./lib/ocr.js";
 
 const SORT_OPTIONS = [
   ["default", "默认"],
@@ -36,70 +21,80 @@ const SORT_OPTIONS = [
   ["ptDesc", "PT ↓"],
 ];
 
-const STATUS_LABELS = {
-  "loading tesseract core": "加载 OCR 核心",
-  "initializing tesseract": "初始化 OCR",
-  "loading language traineddata": "加载日文模型",
-  "initializing api": "初始化识别器",
-  "recognizing text": "识别文字",
+const CARD_TYPE_LABELS = {
+  speed: "速度",
+  stamina: "耐力",
+  power: "力量",
+  guts: "根性",
+  intelligence: "智力",
+  friend: "友人",
+  group: "团队",
 };
+
+const CARD_RARITY_LABELS = { 3: "SSR", 2: "SR", 1: "R" };
 
 const cloneAdaptability = () => JSON.parse(JSON.stringify(DEFAULT_ADAPTABILITY));
 
-const hasRecognizedAptitude = (text) =>
-  /(芝|ダート|泥|短距離|マイル|中距離|長距離|逃げ|先行|差し|追込).{0,8}[SABCDEFG]/i.test(text);
-
 function App() {
-  const fileInputRef = useRef(null);
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const monitorStreamRef = useRef(null);
-  const monitorTimerRef = useRef(null);
-  const monitorRunningRef = useRef(false);
-  const monitorBusyRef = useRef(false);
-  const monitorCountRef = useRef(0);
   const [mode, setMode] = useState("scoring");
   const [hasCut, setHasCut] = useState(false);
   const [adaptability, setAdaptability] = useState(cloneAdaptability);
   const [hints, setHints] = useState({});
-  const [recognized, setRecognized] = useState([]);
-  const [rawText, setRawText] = useState("");
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [monitoring, setMonitoring] = useState(false);
-  const [monitorCount, setMonitorCount] = useState(0);
+
+  const [deck, setDeck] = useState([]); // 选中的支援卡 id
+  const [manualSkills, setManualSkills] = useState([]); // 手动添加的技能名
+  const [cardQuery, setCardQuery] = useState("");
+  const [cardType, setCardType] = useState("all");
+  const [cardRarity, setCardRarity] = useState("all");
+  const [skillQuery, setSkillQuery] = useState("");
+
   const [query, setQuery] = useState("");
   const [rarity, setRarity] = useState("all");
   const [sort, setSort] = useState("costPerformanceDesc");
-  const [recognizedOnly, setRecognizedOnly] = useState(false);
-  const [ocrState, setOcrState] = useState({ running: false, status: "", progress: 0 });
-  const [error, setError] = useState("");
+  const [ownedOnly, setOwnedOnly] = useState(true);
 
-  const skillIndex = useMemo(() => createSkillIndex(skills), []);
-  const recognizedNames = useMemo(
-    () => new Set(recognized.map((item) => item.name)),
-    [recognized],
+  const cardById = useMemo(() => new Map(supportCards.map((c) => [c.id, c])), []);
+  const skillNameSet = useMemo(() => new Set(skills.map((s) => s.n)), []);
+
+  const selectedCards = useMemo(
+    () => deck.map((id) => cardById.get(id)).filter(Boolean),
+    [cardById, deck],
   );
 
+  const ownedSkillNames = useMemo(() => {
+    const owned = new Set(manualSkills);
+    for (const card of selectedCards) {
+      for (const name of card.skills) owned.add(name);
+    }
+    return owned;
+  }, [manualSkills, selectedCards]);
+
+  const cardResults = useMemo(() => {
+    const needle = cardQuery.trim();
+    let list = supportCards;
+    if (cardType !== "all") list = list.filter((c) => c.type === cardType);
+    if (cardRarity !== "all") list = list.filter((c) => c.rarity === Number(cardRarity));
+    if (needle) list = list.filter((c) => c.name.includes(needle) || c.char.includes(needle));
+    return list.slice(0, 60);
+  }, [cardQuery, cardType, cardRarity]);
+
+  const skillResults = useMemo(() => {
+    const needle = skillQuery.trim();
+    if (!needle) return [];
+    return skills
+      .filter((s) => s.n.includes(needle) && !ownedSkillNames.has(s.n))
+      .slice(0, 20);
+  }, [ownedSkillNames, skillQuery]);
+
   const rows = useMemo(() => {
-    let next = calculateSkillRows({
-      skills,
-      upgradeMap,
-      hints,
-      hasCut,
-      mode,
-      adaptability,
-    });
+    let next = calculateSkillRows({ skills, upgradeMap, hints, hasCut, mode, adaptability });
 
     if (query.trim()) {
-      const needle = query.trim().toLowerCase();
-      next = next.filter((row) => row.name.toLowerCase().includes(needle));
+      const needle = query.trim();
+      next = next.filter((row) => row.name.includes(needle));
     }
-    if (rarity !== "all") {
-      next = next.filter((row) => row.rarity === rarity);
-    }
-    if (recognizedOnly) {
-      next = next.filter((row) => recognizedNames.has(row.name));
-    }
+    if (rarity !== "all") next = next.filter((row) => row.rarity === rarity);
+    if (ownedOnly) next = next.filter((row) => ownedSkillNames.has(row.name));
 
     switch (sort) {
       case "costPerformanceDesc":
@@ -118,338 +113,168 @@ function App() {
         break;
     }
     return next;
-  }, [adaptability, hasCut, hints, mode, query, rarity, recognizedNames, recognizedOnly, sort]);
+  }, [adaptability, hasCut, hints, mode, ownedOnly, ownedSkillNames, query, rarity, sort]);
 
-  const applyExtractedState = useCallback((extracted, { replace = false } = {}) => {
-    setRawText((current) => {
-      if (replace || !current) return extracted.rawText;
-      return `${extracted.rawText}\n\n--- 上一轮 ---\n${current}`.slice(0, 12000);
-    });
+  const toggleCard = (id) =>
+    setDeck((current) =>
+      current.includes(id) ? current.filter((x) => x !== id) : [...current, id],
+    );
 
-    setRecognized((current) => {
-      const merged = new Map(replace ? [] : current.map((item) => [item.name, item]));
-      for (const item of extracted.recognizedSkills) {
-        const existing = merged.get(item.name);
-        if (!existing) {
-          merged.set(item.name, item);
-          continue;
-        }
-        merged.set(item.name, {
-          ...existing,
-          ...item,
-          hint: Math.max(existing.hint ?? 0, item.hint ?? 0),
-          score: Math.max(existing.score ?? 0, item.score ?? 0),
-          confidence: Math.max(existing.confidence ?? 0, item.confidence ?? 0),
-        });
-      }
-      return [...merged.values()].sort((a, b) => b.score - a.score);
-    });
-
-    setHints((current) => {
-      const merged = replace ? {} : { ...current };
-      for (const item of extracted.recognizedSkills) {
-        merged[item.name] = Math.max(merged[item.name] ?? 0, item.hint ?? 0);
-      }
-      return merged;
-    });
-
-    if (extracted.hasCut) setHasCut(true);
-    if (hasRecognizedAptitude(extracted.rawText)) {
-      setAdaptability(extracted.adaptability);
-    }
-    if (extracted.recognizedSkills.length > 0) {
-      setRecognizedOnly(true);
-    }
-  }, []);
-
-  const handleFiles = useCallback(
-    async (fileList) => {
-      const file = [...fileList].find((item) => item.type.startsWith("image/"));
-      if (!file) return;
-
-      setError("");
-      setOcrState({ running: true, status: "准备图片", progress: 0 });
-
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(URL.createObjectURL(file));
-
-      try {
-        const { data, numberTokens } = await recognizeScreenshot(file, (next) => {
-          setOcrState({
-            running: true,
-            status: STATUS_LABELS[next.status] ?? next.status,
-            progress: next.progress ?? 0,
-          });
-        });
-        const extracted = extractGameState(data, skillIndex, numberTokens);
-        applyExtractedState(extracted, { replace: true });
-        setOcrState({ running: false, status: "完成", progress: 1 });
-      } catch (nextError) {
-        setError(nextError?.message ?? "OCR 识别失败");
-        setOcrState({ running: false, status: "失败", progress: 0 });
-      }
-    },
-    [applyExtractedState, previewUrl, skillIndex],
-  );
-
-  const captureMonitorFrame = useCallback(async () => {
-    if (!monitorRunningRef.current || monitorBusyRef.current) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || !video.videoWidth || !video.videoHeight) return;
-
-    monitorBusyRef.current = true;
-    monitorCountRef.current += 1;
-    setMonitorCount(monitorCountRef.current);
-    setOcrState({ running: true, status: "监控识别中", progress: 0 });
-
-    try {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-      const file = new File([blob], `monitor-${Date.now()}.png`, { type: "image/png" });
-      const { data, numberTokens } = await recognizeScreenshot(file, (next) => {
-        setOcrState({
-          running: true,
-          status: STATUS_LABELS[next.status] ?? next.status,
-          progress: next.progress ?? 0,
-        });
-      });
-      const extracted = extractGameState(data, skillIndex, numberTokens);
-      applyExtractedState(extracted, { replace: false });
-      setOcrState({
-        running: false,
-        status: `监控中，已扫描 ${monitorCountRef.current} 次`,
-        progress: 1,
-      });
-    } catch (nextError) {
-      setError(nextError?.message ?? "监控 OCR 失败");
-      setOcrState({ running: false, status: "监控识别失败", progress: 0 });
-    } finally {
-      monitorBusyRef.current = false;
-    }
-  }, [applyExtractedState, skillIndex]);
-
-  const stopMonitoring = useCallback(() => {
-    monitorRunningRef.current = false;
-    setMonitoring(false);
-    if (monitorTimerRef.current) {
-      clearInterval(monitorTimerRef.current);
-      monitorTimerRef.current = null;
-    }
-    if (monitorStreamRef.current) {
-      for (const track of monitorStreamRef.current.getTracks()) track.stop();
-      monitorStreamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setOcrState((current) => ({
-      running: false,
-      status: current.status.startsWith("监控") ? "监控已停止" : current.status,
-      progress: current.progress,
-    }));
-  }, []);
-
-  const startMonitoring = useCallback(async () => {
-    if (!navigator.mediaDevices?.getDisplayMedia) {
-      setError("当前浏览器不支持窗口监控，请使用 Chrome / Edge");
-      return;
-    }
-
-    try {
-      setError("");
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          frameRate: 2,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-        audio: false,
-      });
-
-      monitorStreamRef.current = stream;
-      monitorRunningRef.current = true;
-      monitorCountRef.current = 0;
-      setMonitorCount(0);
-      setMonitoring(true);
-      setRecognizedOnly(true);
-
-      const video = videoRef.current;
-      video.srcObject = stream;
-      video.muted = true;
-      await video.play();
-      stream.getVideoTracks()[0]?.addEventListener("ended", stopMonitoring, { once: true });
-
-      await captureMonitorFrame();
-      monitorTimerRef.current = setInterval(captureMonitorFrame, 4500);
-    } catch (nextError) {
-      if (nextError?.name !== "NotAllowedError") {
-        setError(nextError?.message ?? "无法开始窗口监控");
-      }
-      stopMonitoring();
-    }
-  }, [captureMonitorFrame, stopMonitoring]);
-
-  useEffect(() => stopMonitoring, [stopMonitoring]);
-
-  const handlePaste = useCallback(async () => {
-    try {
-      const items = await navigator.clipboard.read();
-      for (const item of items) {
-        const type = item.types.find((candidate) => candidate.startsWith("image/"));
-        if (type) {
-          const blob = await item.getType(type);
-          await handleFiles([new File([blob], "clipboard.png", { type })]);
-          return;
-        }
-      }
-      setError("剪贴板里没有图片");
-    } catch {
-      setError("浏览器没有开放剪贴板图片权限");
-    }
-  }, [handleFiles]);
-
-  const updateAdaptability = (group, key, value) => {
-    setAdaptability((current) => ({
-      ...current,
-      [group]: { ...current[group], [key]: value },
-    }));
+  const addManualSkill = (name) => {
+    setManualSkills((current) => (current.includes(name) ? current : [...current, name]));
+    setSkillQuery("");
   };
+  const removeManualSkill = (name) =>
+    setManualSkills((current) => current.filter((x) => x !== name));
+
+  const updateAdaptability = (group, key, value) =>
+    setAdaptability((current) => ({ ...current, [group]: { ...current[group], [key]: value } }));
 
   const updateHint = (name, value) => {
     const parsed = Number.parseInt(value, 10);
     setHints((current) => {
       const next = { ...current };
-      if (Number.isNaN(parsed)) {
-        delete next[name];
-      } else {
-        next[name] = Math.min(5, Math.max(0, parsed));
-      }
+      if (Number.isNaN(parsed)) delete next[name];
+      else next[name] = Math.min(5, Math.max(0, parsed));
       return next;
     });
   };
 
   const reset = () => {
+    setDeck([]);
+    setManualSkills([]);
     setHints({});
-    setRecognized([]);
-    setRawText("");
     setHasCut(false);
     setAdaptability(cloneAdaptability());
-    setRecognizedOnly(false);
-    setError("");
-    setMonitorCount(0);
-    monitorCountRef.current = 0;
   };
 
   return (
     <main className="app">
       <section className="topbar">
         <div>
-          <h1>赛马娘 OCR 凹分工具</h1>
-          <p>技能 {skills.length} 个，当前结果 {rows.length} 个</p>
+          <h1>赛马娘凹分工具</h1>
+          <p>
+            技能 {skills.length} · 支援卡 {supportCards.length} · 持有技能 {ownedSkillNames.size} · 结果 {rows.length}
+          </p>
         </div>
-        <div className="top-actions">
-          <button
-            className={`button ${monitoring ? "danger" : "secondary"}`}
-            onClick={monitoring ? stopMonitoring : startMonitoring}
-            type="button"
-          >
-            {monitoring ? <Square size={15} /> : <Monitor size={16} />}
-            {monitoring ? "停止监控" : "监控窗口"}
-          </button>
-          <button className="button secondary" onClick={handlePaste} type="button">
-            <Clipboard size={16} />
-            粘贴截图
-          </button>
-          <button
-            className="button primary"
-            onClick={() => fileInputRef.current?.click()}
-            type="button"
-          >
-            <Upload size={16} />
-            上传截图
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(event) => handleFiles(event.target.files)}
-          />
-        </div>
+        <button className="button ghost" onClick={reset} type="button">
+          <RotateCcw size={15} />
+          重置
+        </button>
       </section>
 
       <section className="workspace">
-        <div
-          className="panel dropzone"
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault();
-            handleFiles(event.dataTransfer.files);
-          }}
-        >
+        <div className="panel deck-panel">
           <div className="panel-title">
-            <FileImage size={17} />
-            截图 OCR
+            <Sparkles size={17} />
+            支援卡编成
+            <span className="deck-count">{deck.length} 张</span>
           </div>
-          <div className="preview">
-            <video
-              ref={videoRef}
-              className={monitoring ? "" : "hidden"}
-              playsInline
-              muted
+
+          {selectedCards.length > 0 && (
+            <div className="deck-chips">
+              {selectedCards.map((card) => (
+                <button
+                  key={card.id}
+                  className={`deck-chip type-${card.type}`}
+                  onClick={() => toggleCard(card.id)}
+                  title={`${card.name}（${card.skills.length} 个技能）`}
+                  type="button"
+                >
+                  <span className="chip-badge">{CARD_RARITY_LABELS[card.rarity] ?? ""}</span>
+                  <span className="chip-name">{card.char}</span>
+                  <X size={13} />
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="card-filters">
+            <div className="searchbox">
+              <Search size={15} />
+              <input
+                value={cardQuery}
+                onChange={(event) => setCardQuery(event.target.value)}
+                placeholder="搜索支援卡（名字/角色）"
+              />
+            </div>
+            <select value={cardType} onChange={(event) => setCardType(event.target.value)}>
+              <option value="all">全部类型</option>
+              {Object.entries(CARD_TYPE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <select value={cardRarity} onChange={(event) => setCardRarity(event.target.value)}>
+              <option value="all">全部稀有</option>
+              <option value="3">SSR</option>
+              <option value="2">SR</option>
+              <option value="1">R</option>
+            </select>
+          </div>
+
+          <div className="card-list">
+            {cardResults.map((card) => {
+              const active = deck.includes(card.id);
+              return (
+                <button
+                  key={card.id}
+                  className={`card-row type-${card.type} ${active ? "active" : ""}`}
+                  onClick={() => toggleCard(card.id)}
+                  type="button"
+                >
+                  <span className="card-rarity">{CARD_RARITY_LABELS[card.rarity] ?? ""}</span>
+                  <span className="card-type">{CARD_TYPE_LABELS[card.type] ?? card.type}</span>
+                  <span className="card-name" title={card.name}>{card.char}</span>
+                  <span className="card-skillcount">{card.skills.length} 技能</span>
+                  {active ? <X size={14} /> : <Plus size={14} />}
+                </button>
+              );
+            })}
+            {!cardResults.length && <div className="empty">没有匹配的支援卡</div>}
+          </div>
+
+          <div className="panel-subtitle">手动添加技能</div>
+          <div className="searchbox">
+            <Search size={15} />
+            <input
+              value={skillQuery}
+              onChange={(event) => setSkillQuery(event.target.value)}
+              placeholder="搜索技能名后点击添加"
             />
-            <canvas ref={canvasRef} hidden />
-            {!monitoring && previewUrl ? (
-              <img src={previewUrl} alt="uploaded screenshot preview" />
-            ) : !monitoring ? (
-              <FileImage size={42} />
-            ) : null}
           </div>
-          <div className="ocr-status">
-            {ocrState.running ? (
-              <Loader2 className="spin" size={16} />
-            ) : (
-              <Sparkles size={16} />
-            )}
-            <span>{ocrState.status || "等待截图"}</span>
-            <strong>{Math.round((ocrState.progress ?? 0) * 100)}%</strong>
-          </div>
-          <div className="progress">
-            <span style={{ width: `${Math.round((ocrState.progress ?? 0) * 100)}%` }} />
-          </div>
-          {error && (
-            <div className="error">
-              <X size={14} />
-              {error}
+          {skillResults.length > 0 && (
+            <div className="skill-suggest">
+              {skillResults.map((skill) => (
+                <button
+                  key={skill.n}
+                  className="suggest-item"
+                  onClick={() => addManualSkill(skill.n)}
+                  type="button"
+                >
+                  <Plus size={13} />
+                  {skill.n}
+                  <span className="suggest-meta">{skill.r}</span>
+                </button>
+              ))}
             </div>
           )}
-          <div className="recognized-list">
-            {recognized.slice(0, 12).map((item) => (
-              <button
-                key={item.name}
-                className="recognized-chip"
-                title={item.sourceText}
-                type="button"
-                onClick={() => setQuery(item.name)}
-              >
-                <span>{item.name}</span>
-                <b>Lv{item.hint ?? 0}</b>
-              </button>
-            ))}
-          </div>
-          {monitoring && (
-            <div className="monitor-note">
-              已扫描 {monitorCount} 次，识别到 {recognized.length} 个技能
+          {manualSkills.length > 0 && (
+            <div className="manual-chips">
+              {manualSkills.map((name) => (
+                <button
+                  key={name}
+                  className="manual-chip"
+                  onClick={() => removeManualSkill(name)}
+                  type="button"
+                >
+                  {name}
+                  <X size={12} />
+                </button>
+              ))}
             </div>
           )}
-          <textarea
-            value={rawText}
-            onChange={(event) => setRawText(event.target.value)}
-            placeholder="OCR 原文"
-          />
         </div>
 
         <div className="panel controls">
@@ -461,18 +286,10 @@ function App() {
           <div className="control-row">
             <span>切者</span>
             <div className="segmented two">
-              <button
-                className={!hasCut ? "active" : ""}
-                onClick={() => setHasCut(false)}
-                type="button"
-              >
+              <button className={!hasCut ? "active" : ""} onClick={() => setHasCut(false)} type="button">
                 0
               </button>
-              <button
-                className={hasCut ? "active" : ""}
-                onClick={() => setHasCut(true)}
-                type="button"
-              >
+              <button className={hasCut ? "active" : ""} onClick={() => setHasCut(true)} type="button">
                 1
               </button>
             </div>
@@ -481,53 +298,23 @@ function App() {
           <div className="control-row">
             <span>模式</span>
             <div className="segmented">
-              <button
-                className={mode === "test" ? "active" : ""}
-                onClick={() => setMode("test")}
-                type="button"
-              >
+              <button className={mode === "test" ? "active" : ""} onClick={() => setMode("test")} type="button">
                 技能测验
               </button>
-              <button
-                className={mode === "scoring" ? "active" : ""}
-                onClick={() => setMode("scoring")}
-                type="button"
-              >
+              <button className={mode === "scoring" ? "active" : ""} onClick={() => setMode("scoring")} type="button">
                 凹分
               </button>
             </div>
           </div>
 
-          <AptitudeGroup
-            title="场地"
-            group="track"
-            labels={TRACKS}
-            values={adaptability.track}
-            onChange={updateAdaptability}
-          />
-          <AptitudeGroup
-            title="距离"
-            group="dist"
-            labels={DISTANCES}
-            values={adaptability.dist}
-            onChange={updateAdaptability}
-          />
-          <AptitudeGroup
-            title="脚质"
-            group="style"
-            labels={STYLES}
-            values={adaptability.style}
-            onChange={updateAdaptability}
-          />
+          <AptitudeGroup title="场地" group="track" labels={TRACKS} values={adaptability.track} onChange={updateAdaptability} />
+          <AptitudeGroup title="距离" group="dist" labels={DISTANCES} values={adaptability.dist} onChange={updateAdaptability} />
+          <AptitudeGroup title="脚质" group="style" labels={STYLES} values={adaptability.style} onChange={updateAdaptability} />
 
           <div className="toolbar">
             <div className="searchbox">
               <Search size={15} />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜索技能名"
-              />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="过滤结果技能名" />
             </div>
             <select value={rarity} onChange={(event) => setRarity(event.target.value)}>
               <option value="all">全部</option>
@@ -542,17 +329,9 @@ function App() {
               ))}
             </select>
             <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={recognizedOnly}
-                onChange={(event) => setRecognizedOnly(event.target.checked)}
-              />
-              已识别
+              <input type="checkbox" checked={ownedOnly} onChange={(event) => setOwnedOnly(event.target.checked)} />
+              仅持有
             </label>
-            <button className="button ghost" onClick={reset} type="button">
-              <RotateCcw size={15} />
-              重置
-            </button>
           </div>
         </div>
       </section>
@@ -578,7 +357,7 @@ function App() {
                 <tr
                   key={row.name}
                   className={[
-                    recognizedNames.has(row.name) ? "detected" : "",
+                    ownedSkillNames.has(row.name) ? "detected" : "",
                     row.rarity === "传说" ? "legend" : "",
                     row.name.endsWith("◎") ? "double-circle" : "",
                   ].join(" ")}
@@ -609,7 +388,7 @@ function App() {
               {!rows.length && (
                 <tr>
                   <td colSpan="9" className="empty">
-                    没有匹配的技能
+                    {ownedOnly ? "先选支援卡或手动添加技能" : "没有匹配的技能"}
                   </td>
                 </tr>
               )}
@@ -629,10 +408,7 @@ function AptitudeGroup({ title, group, labels, values, onChange }) {
         {labels.map((label) => (
           <label className="grade-field" key={label}>
             <span>{label}</span>
-            <select
-              value={values[label]}
-              onChange={(event) => onChange(group, label, event.target.value)}
-            >
+            <select value={values[label]} onChange={(event) => onChange(group, label, event.target.value)}>
               {GRADES.map((grade) => (
                 <option value={grade} key={grade}>
                   {grade}
