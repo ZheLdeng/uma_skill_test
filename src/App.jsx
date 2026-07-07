@@ -169,11 +169,12 @@ function App() {
     setAdaptability(cloneAdaptability());
   };
 
-  // 把当前结果表里的技能全部设为某 Hint 等级（空则清空）
-  const setAllHint = (level) => {
+  // 把当前结果表里的技能设为某 Hint 等级（level=null 清空）。whiteOnly：只作用白（普通）技能。
+  const setAllHint = (level, whiteOnly = false) => {
     setHints((current) => {
       const next = { ...current };
       for (const row of rows) {
+        if (whiteOnly && row.rarity !== "普通") continue;
         if (level === null) delete next[row.name];
         else next[row.name] = level;
       }
@@ -381,8 +382,8 @@ function App() {
             </div>
             <select value={rarity} onChange={(event) => setRarity(event.target.value)}>
               <option value="all">全部</option>
-              <option value="普通">普通</option>
-              <option value="传说">传说</option>
+              <option value="普通">白技能</option>
+              <option value="传说">金技能</option>
             </select>
             <select value={sort} onChange={(event) => setSort(event.target.value)}>
               {SORT_OPTIONS.map(([value, label]) => (
@@ -395,8 +396,8 @@ function App() {
               <input type="checkbox" checked={ownedOnly} onChange={(event) => setOwnedOnly(event.target.checked)} />
               仅持有
             </label>
-            <button className="button secondary" onClick={() => setAllHint(5)} type="button">
-              全部 Hint5
+            <button className="button secondary" onClick={() => setAllHint(5, true)} type="button">
+              白技能 Hint5
             </button>
             <button className="button ghost" onClick={() => setAllHint(null)} type="button">
               清空 Hint
@@ -431,11 +432,15 @@ function App() {
                     row.name.endsWith("◎") ? "double-circle" : "",
                   ].join(" ")}
                 >
-                  <td className="skill-name">
+                  <td className={`skill-name ${row.rarity === "传说" ? "gold" : ""}`}>
                     {row.name}
                     {cnOf(row.name) && <span className="skill-cn">{cnOf(row.name)}</span>}
                   </td>
-                  <td>{row.rarity}</td>
+                  <td>
+                    <span className={`rarity-tag ${row.rarity === "传说" ? "gold" : "white"}`}>
+                      {row.rarity === "传说" ? "金" : "白"}
+                    </span>
+                  </td>
                   <td>{row.condition}</td>
                   <td className="num">{row.evalScore}</td>
                   <td className="num">{row.totalPT}</td>

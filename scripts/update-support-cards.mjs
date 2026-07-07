@@ -153,8 +153,10 @@ async function main() {
   let skipped = 0;
   const out = cards
     .map((c) => {
+      // Hint 技能 + 事件技能（含连续事件的金技能）合并
       const skillNames = [];
-      for (const id of c.hints?.hint_skills ?? []) {
+      const ids = [...(c.hints?.hint_skills ?? []), ...(c.event_skills ?? [])];
+      for (const id of ids) {
         const jp = id2jp.get(id);
         if (!jp) {
           skipped += 1;

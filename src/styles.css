@@ -571,6 +571,30 @@ tbody tr.double-circle:not(.detected):not(.legend) {
   font-weight: 650;
 }
 
+.skill-name.gold {
+  color: #9a6b00;
+}
+
+.rarity-tag {
+  display: inline-block;
+  min-width: 26px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rarity-tag.gold {
+  background: #f6c343;
+  color: #5a4300;
+}
+
+.rarity-tag.white {
+  background: #eef2ef;
+  color: #52615d;
+}
+
 .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
