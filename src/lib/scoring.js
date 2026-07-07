@@ -20,8 +20,48 @@ const ADAPTABILITY_MULTIPLIERS = {
   G: 0.7,
 };
 
-const DISCOUNTS_NORMAL = [1, 0.9, 0.8, 0.7, 0.65, 0.6];
-const DISCOUNTS_CUT = [0.9, 0.8, 0.7, 0.6, 0.55, 0.5];
+// hint 0..5 对应的现价折扣系数。
+// 无切者：1级 10%off、2级 20%、3级 30%、4级 35%、满级(5) 40%。
+export const DISCOUNTS_NORMAL = [1, 0.9, 0.8, 0.7, 0.65, 0.6];
+// 有切者：整体再便宜一档，最低到 50%off。
+export const DISCOUNTS_CUT = [0.9, 0.8, 0.7, 0.6, 0.55, 0.5];
+
+/**
+ * 根据"原价 + 画面上显示的现价"反算 Hint 等级与是否切者。
+ * 折扣越大 Hint 越高；若比无切者最大折扣还便宜，则判定为切者。
+ *
+ * @param {number} basePrice 技能原价（DB 中的 p）
+ * @param {number} currentPrice OCR 读到的当前需要 PT
+ * @param {number} [tolerance] 允许的比值误差（价格取整会有少量偏差）
+ * @returns {{hint:number, hasCut:boolean, ratio:number, error:number}|null}
+ */
+export function inferHintFromPrice(basePrice, currentPrice, tolerance = 0.04) {
+  if (!basePrice || basePrice <= 0 || !currentPrice || currentPrice <= 0) return null;
+  return inferHintFromDiscountRatio(currentPrice / basePrice, tolerance);
+}
+
+/**
+ * 已知折扣比值（现价/原价，或 1 - %OFF/100）时反算 Hint 与切者。
+ * @param {number} ratio 折扣比值，0.6 表示 40%off
+ * @param {number} [tolerance] 允许误差
+ * @returns {{hint:number, hasCut:boolean, ratio:number, error:number}|null}
+ */
+export function inferHintFromDiscountRatio(ratio, tolerance = 0.04) {
+  if (!Number.isFinite(ratio) || ratio <= 0 || ratio > 1.05) return null;
+
+  let best = null;
+  const consider = (table, hasCut) => {
+    table.forEach((rate, hint) => {
+      const error = Math.abs(ratio - rate);
+      if (!best || error < best.error) best = { hint, hasCut, ratio, error };
+    });
+  };
+  consider(DISCOUNTS_NORMAL, false);
+  consider(DISCOUNTS_CUT, true);
+
+  if (!best || best.error > tolerance) return null;
+  return best;
+}
 
 export function conditionType(condition) {
   if (TRACKS.includes(condition)) return "track";

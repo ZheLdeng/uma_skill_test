@@ -174,14 +174,14 @@ function App() {
       setPreviewUrl(URL.createObjectURL(file));
 
       try {
-        const data = await recognizeScreenshot(file, (next) => {
+        const { data, numberTokens } = await recognizeScreenshot(file, (next) => {
           setOcrState({
             running: true,
             status: STATUS_LABELS[next.status] ?? next.status,
             progress: next.progress ?? 0,
           });
         });
-        const extracted = extractGameState(data, skillIndex);
+        const extracted = extractGameState(data, skillIndex, numberTokens);
         applyExtractedState(extracted, { replace: true });
         setOcrState({ running: false, status: "完成", progress: 1 });
       } catch (nextError) {
@@ -209,14 +209,14 @@ function App() {
       canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       const file = new File([blob], `monitor-${Date.now()}.png`, { type: "image/png" });
-      const data = await recognizeScreenshot(file, (next) => {
+      const { data, numberTokens } = await recognizeScreenshot(file, (next) => {
         setOcrState({
           running: true,
           status: STATUS_LABELS[next.status] ?? next.status,
           progress: next.progress ?? 0,
         });
       });
-      const extracted = extractGameState(data, skillIndex);
+      const extracted = extractGameState(data, skillIndex, numberTokens);
       applyExtractedState(extracted, { replace: false });
       setOcrState({
         running: false,

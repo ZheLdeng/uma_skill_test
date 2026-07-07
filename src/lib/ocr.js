@@ -1,5 +1,10 @@
-import Tesseract from "tesseract.js";
-import { DEFAULT_ADAPTABILITY, GRADES } from "./scoring.js";
+import Tesseract, { createWorker, PSM } from "tesseract.js";
+import {
+  DEFAULT_ADAPTABILITY,
+  GRADES,
+  inferHintFromDiscountRatio,
+  inferHintFromPrice,
+} from "./scoring.js";
 
 const NORMALIZE_REPLACEMENTS = [
   [/〇/g, "○"],
@@ -29,10 +34,11 @@ const APTITUDE_ALIASES = [
 
 export function normalizeText(value) {
   let text = String(value ?? "").normalize("NFKC");
+  // 先去掉空白与标点：OCR 常把「マイ ルコ」拆开，去空格后 replacements 才能命中。
+  text = text.replace(/[\s\r\n\t"'`“”‘’「」『』【】［］\[\]()（）{}<>〈〉・･,，.。:：;；/\\|_-]/g, "");
   for (const [pattern, replacement] of NORMALIZE_REPLACEMENTS) {
     text = text.replace(pattern, replacement);
   }
-  text = text.replace(/[\s\r\n\t"'`“”‘’「」『』【】［］\[\]()（）{}<>〈〉・･,，.。:：;；/\\|_-]/g, "");
   return text.replace(/([一-龯ぁ-んァ-ン])(?:O|0)(?=ヒント|Lv|LV|$|[一-龯ぁ-んァ-ン])/g, "$1○");
 }
 
@@ -56,14 +62,77 @@ export async function recognizeScreenshot(image, onProgress) {
     },
   });
 
-  URL.revokeObjectURL(preparedImage);
-  return result.data;
+  // 第二遍：数字白名单，专门读现价 PT 与 %OFF（游戏字号小，主识别读不准数字）。
+  const numberTokens = await recognizeNumbers(preparedImage);
+
+  return { data: result.data, numberTokens };
+}
+
+let digitWorkerPromise = null;
+
+function getDigitWorker() {
+  if (!digitWorkerPromise) {
+    digitWorkerPromise = (async () => {
+      const worker = await createWorker("eng");
+      await worker.setParameters({
+        tessedit_char_whitelist: "0123456789%",
+        tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+      });
+      return worker;
+    })().catch((error) => {
+      digitWorkerPromise = null;
+      throw error;
+    });
+  }
+  return digitWorkerPromise;
+}
+
+/** 用数字白名单识别现价 PT / %OFF，返回带 bbox 的数字 token（供按行关联到技能）。 */
+export async function recognizeNumbers(preparedImage) {
+  try {
+    const worker = await getDigitWorker();
+    const { data } = await worker.recognize(preparedImage);
+    return buildNumberTokens(data);
+  } catch {
+    return [];
+  }
+}
+
+export function buildNumberTokens(data) {
+  const tokens = [];
+  const sources = (data?.words?.length ? data.words : data?.lines) ?? [];
+  for (const item of sources) {
+    const text = String(item.text ?? "");
+    const regex = /(\d{1,4})\s*(%?)/g;
+    let match;
+    while ((match = regex.exec(text))) {
+      const value = Number(match[1]);
+      if (!Number.isFinite(value)) continue;
+      tokens.push({ value, isPercent: match[2] === "%", bbox: item.bbox ?? null });
+    }
+  }
+  return tokens;
+}
+
+// 预处理参数：游戏内技能名字号小、对比度低，需要大幅放大并加强对比。
+// 目标是把较短边放大到 ~1600px（截图裁得越小放得越大），并做灰度 + 强对比。
+const PREP_TARGET_MIN = 1600;
+const PREP_MAX_DIM = 4200;
+const PREP_MAX_SCALE = 4;
+const PREP_CONTRAST = 2.4;
+
+export function computePrepScale(width, height) {
+  const minDim = Math.min(width, height);
+  let scale = PREP_TARGET_MIN / minDim;
+  scale = Math.max(1, Math.min(PREP_MAX_SCALE, scale));
+  const maxDim = Math.max(width, height) * scale;
+  if (maxDim > PREP_MAX_DIM) scale *= PREP_MAX_DIM / maxDim;
+  return scale;
 }
 
 async function prepareImage(file) {
   const source = await loadImage(file);
-  const maxWidth = 2600;
-  const scale = Math.min(2, Math.max(1, maxWidth / source.naturalWidth));
+  const scale = computePrepScale(source.naturalWidth, source.naturalHeight);
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(source.naturalWidth * scale);
   canvas.height = Math.round(source.naturalHeight * scale);
@@ -76,7 +145,7 @@ async function prepareImage(file) {
   const data = imageData.data;
   for (let i = 0; i < data.length; i += 4) {
     const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-    const boosted = Math.max(0, Math.min(255, (gray - 128) * 1.35 + 128));
+    const boosted = Math.max(0, Math.min(255, (gray - 128) * PREP_CONTRAST + 128));
     data[i] = boosted;
     data[i + 1] = boosted;
     data[i + 2] = boosted;
@@ -99,17 +168,18 @@ function loadImage(file) {
   });
 }
 
-export function extractGameState(ocrData, skillIndex) {
+export function extractGameState(ocrData, skillIndex, numberTokens = []) {
   const rawText = ocrData.text ?? "";
   const lines = buildLines(ocrData);
   const textForSearch = normalizeText(rawText);
+  const recognizedSkills = detectSkills(lines, textForSearch, skillIndex, numberTokens);
 
   return {
     rawText,
     lines,
-    hasCut: detectCut(textForSearch),
+    hasCut: detectCut(textForSearch) || recognizedSkills.some((s) => s.hasCut),
     adaptability: detectAdaptability(lines, rawText),
-    recognizedSkills: detectSkills(lines, textForSearch, skillIndex),
+    recognizedSkills,
   };
 }
 
@@ -170,42 +240,41 @@ function findGradeForAliases(lines, aliases) {
   return null;
 }
 
-function detectSkills(lines, textForSearch, skillIndex) {
+function detectSkills(lines, textForSearch, skillIndex, numberTokens = []) {
   const recognized = new Map();
+
+  const register = (skill, score, line, discount) => {
+    const previous = recognized.get(skill.n);
+    if (!previous || score > previous.score) {
+      recognized.set(skill.n, {
+        name: skill.n,
+        hint: discount.hint,
+        hasCut: discount.hasCut,
+        score,
+        confidence: line?.confidence ?? 0,
+        sourceText: line?.text ?? "全文匹配",
+      });
+    } else {
+      if (discount.hint > previous.hint) previous.hint = discount.hint;
+      if (discount.hasCut) previous.hasCut = true;
+    }
+  };
 
   for (const line of lines) {
     if (isLikelyAptitudeLine(line.text, line.normalized)) continue;
 
     const matches = findSkillMatches(line.normalized, skillIndex);
     for (const match of matches) {
-      const previous = recognized.get(match.skill.n);
-      const hint = extractHint(line.text, lines[line.index - 1]?.text, lines[line.index + 1]?.text);
+      const discount = extractRowDiscount(match.skill, line, lines, numberTokens);
       const score = match.score + (line.confidence || 0) / 1000;
-      if (!previous || score > previous.score) {
-        recognized.set(match.skill.n, {
-          name: match.skill.n,
-          hint,
-          score,
-          confidence: line.confidence,
-          sourceText: line.text,
-        });
-      } else if (hint > previous.hint) {
-        previous.hint = hint;
-      }
+      register(match.skill, score, line, discount);
     }
   }
 
   for (const entry of skillIndex) {
     if (entry.normalized.length >= 4 && textForSearch.includes(entry.normalized)) {
-      const current = recognized.get(entry.skill.n);
-      if (!current) {
-        recognized.set(entry.skill.n, {
-          name: entry.skill.n,
-          hint: extractHintAroundSkill(entry.normalized, textForSearch),
-          score: 1,
-          confidence: 0,
-          sourceText: "全文匹配",
-        });
+      if (!recognized.has(entry.skill.n)) {
+        register(entry.skill, 1, null, { hint: 0, hasCut: false });
       }
     }
   }
@@ -213,6 +282,107 @@ function detectSkills(lines, textForSearch, skillIndex) {
   return [...recognized.values()]
     .sort((a, b) => b.score - a.score)
     .slice(0, 80);
+}
+
+/** 收集与某行处于同一"技能卡"行带内的所有 OCR 行（技能名 / 描述 / 折扣 / 现价可能分行）。 */
+function collectRowLines(line, lines) {
+  const result = [line];
+  if (line.bbox && Number.isFinite(line.bbox.y0)) {
+    const height = Math.max(12, line.bbox.y1 - line.bbox.y0);
+    const center = (line.bbox.y0 + line.bbox.y1) / 2;
+    const window = height * 3;
+    for (const other of lines) {
+      if (other === line || !other.bbox) continue;
+      const oy = (other.bbox.y0 + other.bbox.y1) / 2;
+      if (Math.abs(oy - center) <= window) result.push(other);
+    }
+  } else {
+    for (const idx of [line.index - 1, line.index + 1, line.index + 2]) {
+      const other = lines[idx];
+      if (other) result.push(other);
+    }
+  }
+  return result;
+}
+
+/**
+ * 从技能所在行带里推断 Hint / 切者：
+ * 1. "N%OFF" 折扣文本；
+ * 2. 现价 PT 数字（用原价反算折扣）；
+ * 3. "ヒント Lv N" 文本。
+ * 取误差最小的候选。
+ */
+function extractRowDiscount(skill, line, lines, numberTokens = []) {
+  const text = collectRowLines(line, lines)
+    .map((item) => item.text)
+    .join(" ")
+    .normalize("NFKC");
+  const candidates = discountCandidatesFromText(text, skill);
+
+  // 数字白名单 pass 的 token：按 bbox 行带关联到当前技能
+  if (line.bbox && Number.isFinite(line.bbox.y0)) {
+    const height = Math.max(12, line.bbox.y1 - line.bbox.y0);
+    const center = (line.bbox.y0 + line.bbox.y1) / 2;
+    const window = height * 3;
+    for (const token of numberTokens) {
+      if (!token.bbox) continue;
+      const ty = (token.bbox.y0 + token.bbox.y1) / 2;
+      if (Math.abs(ty - center) > window) continue;
+      if (token.isPercent) {
+        const info = inferHintFromDiscountRatio(1 - token.value / 100);
+        if (info) candidates.push(info);
+      } else if (skill?.p) {
+        const info = inferHintFromPrice(skill.p, token.value);
+        if (info) candidates.push(info);
+      }
+    }
+  }
+
+  return chooseDiscount(candidates);
+}
+
+/** 只从文本推断（用于测试与无 bbox 场景）。 */
+export function inferDiscount(text, skill) {
+  return chooseDiscount(discountCandidatesFromText(text, skill));
+}
+
+function discountCandidatesFromText(text, skill) {
+  const candidates = [];
+  let match;
+
+  // 1) N%OFF（允许 OFF 被误识别成 0FF / OFE 等）
+  const offRe = /(\d{1,3})\s*%\s*[oO0FfEe]{0,3}/g;
+  while ((match = offRe.exec(text))) {
+    const pct = Number(match[1]);
+    if (pct > 0 && pct <= 60) {
+      const info = inferHintFromDiscountRatio(1 - pct / 100);
+      if (info) candidates.push(info);
+    }
+  }
+
+  // 2) 现价 PT 反算（需要原价）
+  if (skill?.p) {
+    const numRe = /\d{2,4}/g;
+    while ((match = numRe.exec(text))) {
+      const info = inferHintFromPrice(skill.p, Number(match[0]));
+      if (info) candidates.push(info);
+    }
+  }
+
+  // 3) ヒント Lv N 直接文本
+  const lvRe = /(?:ヒント|hint|Lv|LV|レベル)\s*\.?\s*([1-5])/gi;
+  while ((match = lvRe.exec(text))) {
+    candidates.push({ hint: clampHint(match[1]), hasCut: false, error: 0.03 });
+  }
+
+  return candidates;
+}
+
+function chooseDiscount(candidates) {
+  if (!candidates.length) return { hint: 0, hasCut: false };
+  candidates.sort((a, b) => (a.error ?? 1) - (b.error ?? 1));
+  const best = candidates[0];
+  return { hint: best.hint, hasCut: Boolean(best.hasCut) };
 }
 
 function isLikelyAptitudeLine(rawText, normalized) {
@@ -259,7 +429,9 @@ function findSkillMatches(text, skillIndex) {
 
     const threshold = name.length <= 4 ? 0.88 : 0.74;
     if (score >= threshold) {
-      matches.push({ skill: entry.skill, score });
+      // 前缀锚点加成：区分开头不同、词尾相同的近似技能（如マイルコーナー vs ダートコーナー）
+      const anchorBonus = text.includes(name.slice(0, 2)) ? 0.06 : 0;
+      matches.push({ skill: entry.skill, score: score + anchorBonus });
     }
   }
 
@@ -314,28 +486,6 @@ function diceCoefficient(a, b) {
   }
 
   return (2 * hits) / (a.length + b.length - 2);
-}
-
-function extractHint(current = "", prev = "", next = "") {
-  const text = `${prev} ${current} ${next}`.normalize("NFKC");
-  const patterns = [
-    /(?:ヒント|hint)\s*(?:Lv|LV|lv|レベル)?\s*\.?\s*([1-5])/i,
-    /(?:Lv|LV|lv)\s*\.?\s*([1-5])/,
-    /([1-5])\s*(?:ヒント|hint)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return clampHint(match[1]);
-  }
-
-  return 0;
-}
-
-function extractHintAroundSkill(skillName, text) {
-  const index = text.indexOf(skillName);
-  if (index === -1) return 0;
-  return extractHint(text.slice(Math.max(0, index - 20), index + skillName.length + 24));
 }
 
 function clampHint(value) {
