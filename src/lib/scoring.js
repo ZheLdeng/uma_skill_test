@@ -63,13 +63,14 @@ export function calculateSkillRows({
   return skills.map((skill) => {
     const hint = hints[skill.n] ?? 0;
     const discountRate = discounts[hint] ?? discounts[0];
-    const testScore = skill.r === "传说" ? skill.e + 1200 : skill.e + 400;
     const baseScore = round1(skill.a);
     const adaptabilityScore = round1(
       baseScore
         * conditionMultiplier(skill.c1, adaptability)
         * conditionMultiplier(skill.c2, adaptability),
     );
+    const testScore =
+      skill.r === "传说" ? adaptabilityScore + 1200 : adaptabilityScore + 400;
 
     const lowerSkillName = upgradeMap[skill.n];
     let currentPrice;
@@ -93,7 +94,7 @@ export function calculateSkillRows({
 
     const numerator = mode === "test" ? testScore : adaptabilityScore;
     const costPerformance =
-      currentPrice > 0 ? round2((numerator / currentPrice) * 100) : 0;
+      currentPrice > 0 ? round2(numerator / currentPrice) : 0;
 
     return {
       name: skill.n,
