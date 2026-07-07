@@ -3,6 +3,12 @@ import { Plus, RotateCcw, Search, Sparkles, X } from "lucide-react";
 import skills from "./data/skills.json";
 import upgradeMap from "./data/upgrade-map.json";
 import supportCards from "./data/support-cards.json";
+import skillCn from "./data/skill-cn.json";
+
+const MAX_DECK = 6;
+const cardImage = (id) =>
+  `https://gametora.com/images/umamusume/supports/support_card_s_${id}.png`;
+const cnOf = (name) => skillCn[name] ?? "";
 import {
   calculateSkillRows,
   DEFAULT_ADAPTABILITY,
@@ -81,8 +87,13 @@ function App() {
   const skillResults = useMemo(() => {
     const needle = skillQuery.trim();
     if (!needle) return [];
+    const lower = needle.toLowerCase();
     return skills
-      .filter((s) => s.n.includes(needle) && !ownedSkillNames.has(s.n))
+      .filter(
+        (s) =>
+          !ownedSkillNames.has(s.n) &&
+          (s.n.includes(needle) || cnOf(s.n).includes(needle) || cnOf(s.n).toLowerCase().includes(lower)),
+      )
       .slice(0, 20);
   }, [ownedSkillNames, skillQuery]);
 
@@ -116,9 +127,11 @@ function App() {
   }, [adaptability, hasCut, hints, mode, ownedOnly, ownedSkillNames, query, rarity, sort]);
 
   const toggleCard = (id) =>
-    setDeck((current) =>
-      current.includes(id) ? current.filter((x) => x !== id) : [...current, id],
-    );
+    setDeck((current) => {
+      if (current.includes(id)) return current.filter((x) => x !== id);
+      if (current.length >= MAX_DECK) return current;
+      return [...current, id];
+    });
 
   const addManualSkill = (name) => {
     setManualSkills((current) => (current.includes(name) ? current : [...current, name]));
@@ -168,7 +181,7 @@ function App() {
           <div className="panel-title">
             <Sparkles size={17} />
             支援卡编成
-            <span className="deck-count">{deck.length} 张</span>
+            <span className="deck-count">{deck.length} / {MAX_DECK} 张</span>
           </div>
 
           {selectedCards.length > 0 && (
@@ -178,11 +191,19 @@ function App() {
                   key={card.id}
                   className={`deck-chip type-${card.type}`}
                   onClick={() => toggleCard(card.id)}
-                  title={`${card.name}（${card.skills.length} 个技能）`}
+                  title={`${card.nameCn ? `${card.nameCn} / ` : ""}${card.name}（${card.skills.length} 个技能）`}
                   type="button"
                 >
-                  <span className="chip-badge">{CARD_RARITY_LABELS[card.rarity] ?? ""}</span>
-                  <span className="chip-name">{card.char}</span>
+                  <img
+                    className="chip-img"
+                    src={cardImage(card.id)}
+                    alt=""
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                  <span className="chip-name">{card.charCn || card.char}</span>
                   <X size={13} />
                 </button>
               ))}
@@ -214,19 +235,37 @@ function App() {
             </select>
           </div>
 
+          {deck.length >= MAX_DECK && <div className="deck-full">已选满 {MAX_DECK} 张，需先移除再添加</div>}
+
           <div className="card-list">
             {cardResults.map((card) => {
               const active = deck.includes(card.id);
+              const full = !active && deck.length >= MAX_DECK;
               return (
                 <button
                   key={card.id}
-                  className={`card-row type-${card.type} ${active ? "active" : ""}`}
+                  className={`card-row type-${card.type} ${active ? "active" : ""} ${full ? "disabled" : ""}`}
                   onClick={() => toggleCard(card.id)}
+                  disabled={full}
                   type="button"
                 >
+                  <img
+                    className="card-img"
+                    src={cardImage(card.id)}
+                    alt=""
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.visibility = "hidden";
+                    }}
+                  />
                   <span className="card-rarity">{CARD_RARITY_LABELS[card.rarity] ?? ""}</span>
                   <span className="card-type">{CARD_TYPE_LABELS[card.type] ?? card.type}</span>
-                  <span className="card-name" title={card.name}>{card.char}</span>
+                  <span className="card-names">
+                    <span className="card-name-cn" title={card.name}>{card.charCn || card.char}</span>
+                    {card.charCn && card.charCn !== card.char && (
+                      <span className="card-name-jp">{card.char}</span>
+                    )}
+                  </span>
                   <span className="card-skillcount">{card.skills.length} 技能</span>
                   {active ? <X size={14} /> : <Plus size={14} />}
                 </button>
@@ -254,7 +293,10 @@ function App() {
                   type="button"
                 >
                   <Plus size={13} />
-                  {skill.n}
+                  <span className="suggest-name">
+                    {skill.n}
+                    {cnOf(skill.n) && <em className="suggest-cn">{cnOf(skill.n)}</em>}
+                  </span>
                   <span className="suggest-meta">{skill.r}</span>
                 </button>
               ))}
@@ -267,9 +309,10 @@ function App() {
                   key={name}
                   className="manual-chip"
                   onClick={() => removeManualSkill(name)}
+                  title={cnOf(name) ? `${cnOf(name)} / ${name}` : name}
                   type="button"
                 >
-                  {name}
+                  {cnOf(name) || name}
                   <X size={12} />
                 </button>
               ))}
@@ -362,7 +405,10 @@ function App() {
                     row.name.endsWith("◎") ? "double-circle" : "",
                   ].join(" ")}
                 >
-                  <td className="skill-name">{row.name}</td>
+                  <td className="skill-name">
+                    {row.name}
+                    {cnOf(row.name) && <span className="skill-cn">{cnOf(row.name)}</span>}
+                  </td>
                   <td>{row.rarity}</td>
                   <td>{row.condition}</td>
                   <td className="num">{row.evalScore}</td>
