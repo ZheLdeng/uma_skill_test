@@ -296,25 +296,18 @@ function App() {
               placeholder="搜索马娘（中/日名），选中自动带入适性与自带技能"
             />
           </div>
-          <div className="card-list uma-list">
-            {umaResults.map((uma) => {
-              const active = selectedUmaId === uma.id;
-              return (
-                <button
-                  key={uma.id}
-                  className={`uma-row ${active ? "active" : ""}`}
-                  onClick={() => selectUma(uma)}
-                  type="button"
-                >
-                  <img className="card-img" src={umaThumb(uma.id)} alt="" loading="lazy" onError={hideImg} />
-                  <span className="card-names">
-                    <span className="card-name-cn">{uma.charCn || uma.char}</span>
-                    <span className="card-name-jp">{uma.name}</span>
-                  </span>
-                  {active ? <X size={14} /> : <Plus size={14} />}
-                </button>
-              );
-            })}
+          <div className="uma-grid">
+            {umaResults.map((uma) => (
+              <button
+                key={uma.id}
+                className={`uma-avatar ${selectedUmaId === uma.id ? "active" : ""}`}
+                onClick={() => selectUma(uma)}
+                title={`${uma.charCn || uma.char}｜${uma.name}`}
+                type="button"
+              >
+                <img src={umaThumb(uma.id)} alt={uma.charCn || uma.char} loading="lazy" onError={hideImg} />
+              </button>
+            ))}
           </div>
 
           <div className="panel-title with-sep">

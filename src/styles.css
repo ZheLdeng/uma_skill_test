@@ -207,31 +207,40 @@ h1 {
   white-space: nowrap;
 }
 
-.uma-list {
-  max-height: 240px;
+.uma-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 260px;
   margin-top: 8px;
+  overflow: auto;
+  padding: 2px;
 }
 
-.uma-row {
-  display: grid;
-  grid-template-columns: 40px 1fr 16px;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 6px 9px;
-  background: #fff;
-  text-align: left;
-  font-size: 13px;
+.uma-avatar {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #eef2ef;
+  line-height: 0;
 }
 
-.uma-row:hover {
-  background: #f7faf8;
+.uma-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.uma-row.active {
+.uma-avatar:hover {
   border-color: var(--accent);
-  background: var(--accent-soft);
+}
+
+.uma-avatar.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .source-img.uma {
