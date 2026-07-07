@@ -36,8 +36,14 @@ async function fetchJson(url) {
   return res.json();
 }
 
-/** 枚举 bwiki 中引用某模板的所有页面（简中技能 / 简中支援卡），返回 Map<ID, 中文名>。 */
-async function fetchBwikiIdMap(templateTitle, stripPrefix = "简/") {
+/** 取模板某字段值（截到换行/竖线/右花括号）。 */
+function tplField(content, name) {
+  const m = content.match(new RegExp(`\\|\\s*${name}\\s*=\\s*([^\\n|}]*)`));
+  return m ? m[1].trim() : "";
+}
+
+/** 枚举 bwiki 中引用某模板的所有页面，返回其 wikitext 内容数组。 */
+async function fetchBwikiPages(templateTitle) {
   const titles = [];
   let cont;
   do {
@@ -56,9 +62,8 @@ async function fetchBwikiIdMap(templateTitle, stripPrefix = "简/") {
     cont = data.continue?.eicontinue;
   } while (cont);
 
-  const map = new Map();
+  const contents = [];
   for (let i = 0; i < titles.length; i += 50) {
-    const batch = titles.slice(i, i + 50);
     const url = new URL(BW);
     url.search = new URLSearchParams({
       action: "query",
@@ -66,15 +71,39 @@ async function fetchBwikiIdMap(templateTitle, stripPrefix = "简/") {
       rvprop: "content",
       rvslots: "main",
       formatversion: "2",
-      titles: batch.join("|"),
+      titles: titles.slice(i, i + 50).join("|"),
       format: "json",
     });
     const data = await fetchJson(url);
     for (const page of data.query?.pages ?? []) {
-      const content = page.revisions?.[0]?.slots?.main?.content ?? "";
-      const m = content.match(/\|\s*ID\s*=\s*(\d+)/);
-      if (m) map.set(m[1], page.title.replace(new RegExp(`^${stripPrefix}`), ""));
+      const content = page.revisions?.[0]?.slots?.main?.content;
+      if (content) contents.push(content);
     }
+  }
+  return contents;
+}
+
+/** 技能：日文名 -> 简体中文名（bwiki Template:技能，覆盖日服技能）。 */
+async function fetchBwikiSkillCn() {
+  const pages = await fetchBwikiPages("Template:技能");
+  const map = new Map();
+  for (const content of pages) {
+    const jp = tplField(content, "技能名");
+    const cn = tplField(content, "中文名");
+    if (jp && cn) map.set(normName(jp), cn);
+  }
+  return map;
+}
+
+/** 支援卡：ID -> { cn 全名, charCn 角色名 }（bwiki Template:支援卡）。 */
+async function fetchBwikiCardCn() {
+  const pages = await fetchBwikiPages("Template:支援卡");
+  const map = new Map();
+  for (const content of pages) {
+    const id = tplField(content, "ID");
+    const cn = tplField(content, "中文名");
+    const charCn = tplField(content, "关联角色");
+    if (id && cn) map.set(id, { cn, charCn });
   }
   return map;
 }
@@ -91,24 +120,23 @@ async function main() {
   const gtSkills = await fetchJson(`${GT}/data/umamusume/skills.${skillHash}.json`);
   console.log(`[data] GameTora 支援卡 ${cards.length}，技能 ${gtSkills.length}`);
 
-  // ---- bilibili wiki 中文名 ----
-  console.log("[data] 读取 bwiki 简中技能名…");
-  const skillCnById = await fetchBwikiIdMap("Template:简中技能");
-  console.log(`[data] bwiki 技能中文名 ${skillCnById.size} 条`);
-  console.log("[data] 读取 bwiki 简中支援卡名…");
-  const cardCnById = await fetchBwikiIdMap("Template:简中支援卡");
+  // ---- bilibili wiki 中文名（日服技能页，含中文译名）----
+  console.log("[data] 读取 bwiki 技能中文名（Template:技能）…");
+  const skillCnByJp = await fetchBwikiSkillCn();
+  console.log(`[data] bwiki 技能中文名 ${skillCnByJp.size} 条`);
+  console.log("[data] 读取 bwiki 支援卡中文名（Template:支援卡）…");
+  const cardCnById = await fetchBwikiCardCn();
   console.log(`[data] bwiki 支援卡中文名 ${cardCnById.size} 条`);
 
   const id2jp = new Map(gtSkills.map((s) => [s.id, s.jpname]));
   const ourSkills = JSON.parse(fs.readFileSync(SKILLS_PATH, "utf8"));
   const ourSet = new Set(ourSkills.map((o) => normName(o.n)));
 
-  // 技能中日对照：jp -> 简中（bwiki ID join）
+  // 技能中日对照：jp -> 简中（bwiki 按日文名直接对应）
   const skillCn = {};
-  for (const s of gtSkills) {
-    const jp = normName(s.jpname);
-    if (!ourSet.has(jp)) continue;
-    const cn = skillCnById.get(String(s.id));
+  for (const o of ourSkills) {
+    const jp = normName(o.n);
+    const cn = skillCnByJp.get(jp);
     if (cn) skillCn[jp] = cn;
   }
   // ◎ 档若缺，用 ○ 版推导
@@ -135,14 +163,13 @@ async function main() {
         if (ourSet.has(name)) skillNames.push(name);
         else skipped += 1;
       }
-      const cnFull = cardCnById.get(String(c.support_id)) ?? "";
-      const charCn = cnFull.includes("】") ? cnFull.split("】").pop() : cnFull;
+      const cnInfo = cardCnById.get(String(c.support_id));
       return {
         id: c.support_id,
         name: `${c.title_ja ?? ""}${c.name_jp ?? c.char_name ?? ""}`,
-        nameCn: cnFull,
+        nameCn: cnInfo?.cn ?? "",
         char: c.name_jp ?? c.char_name ?? "",
-        charCn, // 无 bwiki 中文时留空，UI 回退显示日文
+        charCn: cnInfo?.charCn ?? "", // 无 bwiki 中文时留空，UI 回退显示日文
         type: c.type ?? "",
         rarity: Number(c.rarity) || 0,
         release: c.release ?? "",
