@@ -34,10 +34,27 @@ const DRY_RUN = process.argv.includes("--dry");
 const normName = (v) =>
   String(v ?? "").normalize("NFKC").replace(/[◯〇]/g, "○").replace(/&amp;/g, "&").replace(/＆/g, "&");
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function fetchJson(url) {
   const res = await fetch(url, { headers: UA });
   if (!res.ok) throw new Error(`拉取失败 ${url}: HTTP ${res.status}`);
   return res.json();
+}
+
+/** 带重试与退避的请求（bwiki 有时限流返回 5xx）。 */
+async function requestJson(url, options, tries = 5) {
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (error) {
+      if (i === tries - 1) throw error;
+      await sleep(1000 * (i + 1));
+    }
+  }
+  return null;
 }
 
 /** 取模板某字段值（截到换行/竖线/右花括号），并清掉 <br> 及其后内容（如"流星<br>Shooting star"）。 */
@@ -52,8 +69,7 @@ async function fetchBwikiPages(templateTitle) {
   const titles = [];
   let cont;
   do {
-    const url = new URL(BW);
-    url.search = new URLSearchParams({
+    const body = new URLSearchParams({
       action: "query",
       list: "embeddedin",
       eititle: templateTitle,
@@ -62,30 +78,52 @@ async function fetchBwikiPages(templateTitle) {
       format: "json",
       ...(cont ? { eicontinue: cont } : {}),
     });
-    const data = await fetchJson(url);
+    const data = await requestJson(BW, {
+      method: "POST",
+      headers: { ...UA, "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
     for (const p of data.query?.embeddedin ?? []) titles.push(p.title);
     cont = data.continue?.eicontinue;
+    await sleep(150);
   } while (cont);
 
   const contents = [];
-  for (let i = 0; i < titles.length; i += 50) {
-    const url = new URL(BW);
-    url.search = new URLSearchParams({
+  for (let i = 0; i < titles.length; i += 40) {
+    // 用 POST 提交 titles，避免 GET URL 过长被拒（HTTP 567）
+    const body = new URLSearchParams({
       action: "query",
       prop: "revisions",
       rvprop: "content",
       rvslots: "main",
       formatversion: "2",
-      titles: titles.slice(i, i + 50).join("|"),
+      titles: titles.slice(i, i + 40).join("|"),
       format: "json",
     });
-    const data = await fetchJson(url);
+    const data = await requestJson(BW, {
+      method: "POST",
+      headers: { ...UA, "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
     for (const page of data.query?.pages ?? []) {
       const content = page.revisions?.[0]?.slots?.main?.content;
       if (content) contents.push(content);
     }
+    await sleep(200);
   }
   return contents;
+}
+
+/** 育成马娘：card_id -> 角色中文名（bwiki Template:赛马娘，覆盖全部马娘图鉴）。 */
+async function fetchBwikiUmaCn() {
+  const pages = await fetchBwikiPages("Template:赛马娘");
+  const map = new Map();
+  for (const content of pages) {
+    const id = tplField(content, "ID");
+    const cn = tplField(content, "中文名");
+    if (id && cn) map.set(id, cn);
+  }
+  return map;
 }
 
 /** 技能：日文名 -> 简体中文名（bwiki Template:技能，覆盖日服技能）。 */
@@ -137,6 +175,9 @@ async function main() {
   console.log("[data] 读取 bwiki 支援卡中文名（Template:支援卡）…");
   const { cardMap: cardCnById, charMap: charCnById } = await fetchBwikiCardCn();
   console.log(`[data] bwiki 支援卡中文名 ${cardCnById.size} 条，角色中文名 ${charCnById.size} 条`);
+  console.log("[data] 读取 bwiki 马娘中文名（Template:赛马娘）…");
+  const umaCnById = await fetchBwikiUmaCn();
+  console.log(`[data] bwiki 马娘中文名 ${umaCnById.size} 条`);
 
   const id2jp = new Map(gtSkills.map((s) => [s.id, s.jpname]));
   const ourSkills = JSON.parse(fs.readFileSync(SKILLS_PATH, "utf8"));
@@ -219,7 +260,7 @@ async function main() {
         charId: c.char_id,
         name: `${c.title_jp ?? c.title ?? ""}${c.name_jp ?? c.name_en ?? ""}`,
         char: c.name_jp ?? c.name_en ?? "",
-        charCn: charCnById.get(String(c.char_id)) ?? "",
+        charCn: umaCnById.get(String(c.card_id)) ?? charCnById.get(String(c.char_id)) ?? "",
         rarity: Number(c.rarity) || 0,
         release: c.release ?? "",
         aptitude,

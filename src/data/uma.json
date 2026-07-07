@@ -4,7 +4,7 @@
     "charId": 1077,
     "name": "[万福龍湯伝・頂]ナリタトップロード",
     "char": "ナリタトップロード",
-    "charCn": "",
+    "charCn": "成田路",
     "rarity": 3,
     "release": "2026-06-29",
     "aptitude": {
@@ -40,7 +40,7 @@
     "charId": 1134,
     "name": "[花宿しのクチュール]カレンブーケドール",
     "char": "カレンブーケドール",
-    "charCn": "",
+    "charCn": "机伶金花",
     "rarity": 3,
     "release": "2026-06-15",
     "aptitude": {
@@ -111,7 +111,7 @@
     "charId": 1116,
     "name": "[La dama perfetta]ジェンティルドンナ",
     "char": "ジェンティルドンナ",
-    "charCn": "",
+    "charCn": "贵妇人",
     "rarity": 3,
     "release": "2026-05-29",
     "aptitude": {
@@ -147,7 +147,7 @@
     "charId": 1136,
     "name": "[Divine Raiment]レッドディザイア",
     "char": "レッドディザイア",
-    "charCn": "",
+    "charCn": "红色梦想",
     "rarity": 3,
     "release": "2026-05-20",
     "aptitude": {
@@ -182,7 +182,7 @@
     "charId": 1112,
     "name": "[Daring Darling!]デアリングハート",
     "char": "デアリングハート",
-    "charCn": "",
+    "charCn": "勇敢之心",
     "rarity": 3,
     "release": "2026-05-11",
     "aptitude": {
@@ -254,7 +254,7 @@
     "charId": 1094,
     "name": "[ヴァーミリオン・ヘッド]ジャングルポケット",
     "char": "ジャングルポケット",
-    "charCn": "",
+    "charCn": "森林宝穴",
     "rarity": 3,
     "release": "2026-04-30",
     "aptitude": {
@@ -290,7 +290,7 @@
     "charId": 1118,
     "name": "[Glacial Queen]アドマイヤグルーヴ",
     "char": "アドマイヤグルーヴ",
-    "charCn": "",
+    "charCn": "爱慕律动",
     "rarity": 3,
     "release": "2026-04-20",
     "aptitude": {
@@ -326,7 +326,7 @@
     "charId": 1130,
     "name": "[万折不撓の纏]ラッキーライラック",
     "char": "ラッキーライラック",
-    "charCn": "",
+    "charCn": "旺紫丁",
     "rarity": 3,
     "release": "2026-04-10",
     "aptitude": {
@@ -398,7 +398,7 @@
     "charId": 1082,
     "name": "[水縹の一閃]ノースフライト",
     "char": "ノースフライト",
-    "charCn": "",
+    "charCn": "北方飞翔",
     "rarity": 3,
     "release": "2026-03-30",
     "aptitude": {
@@ -434,7 +434,7 @@
     "charId": 1143,
     "name": "[Lueur Angélique]ヴィクトワールピサ",
     "char": "ヴィクトワールピサ",
-    "charCn": "",
+    "charCn": "比萨胜驹",
     "rarity": 3,
     "release": "2026-03-19",
     "aptitude": {
@@ -470,7 +470,7 @@
     "charId": 1132,
     "name": "[Love-Linked Aster]ラヴズオンリーユー",
     "char": "ラヴズオンリーユー",
-    "charCn": "",
+    "charCn": "唯独爱你",
     "rarity": 3,
     "release": "2026-03-11",
     "aptitude": {
@@ -506,7 +506,7 @@
     "charId": 1129,
     "name": "[The Changer]アーモンドアイ",
     "char": "アーモンドアイ",
-    "charCn": "",
+    "charCn": "杏目",
     "rarity": 3,
     "release": "2026-02-24",
     "aptitude": {
@@ -542,7 +542,7 @@
     "charId": 1103,
     "name": "[Inspiring Genius]ロイスアンドロイス",
     "char": "ロイスアンドロイス",
-    "charCn": "",
+    "charCn": "莱斯莱斯",
     "rarity": 2,
     "release": "2026-02-14",
     "aptitude": {
@@ -650,7 +650,7 @@
     "charId": 1137,
     "name": "[Miracle Author]キセキ",
     "char": "キセキ",
-    "charCn": "",
+    "charCn": "神业",
     "rarity": 3,
     "release": "2026-01-19",
     "aptitude": {
@@ -686,7 +686,7 @@
     "charId": 1124,
     "name": "[暁光]バブルガムフェロー",
     "char": "バブルガムフェロー",
-    "charCn": "",
+    "charCn": "吹波糖",
     "rarity": 3,
     "release": "2026-01-08",
     "aptitude": {
@@ -758,7 +758,7 @@
     "charId": 1076,
     "name": "[Nouvelle pousse]サクラローレル",
     "char": "サクラローレル",
-    "charCn": "",
+    "charCn": "樱花桂冠",
     "rarity": 3,
     "release": "2025-12-26",
     "aptitude": {
@@ -794,7 +794,7 @@
     "charId": 1135,
     "name": "[Sunlit Outsider]ステイゴールド",
     "char": "ステイゴールド",
-    "charCn": "",
+    "charCn": "黄金旅程",
     "rarity": 3,
     "release": "2025-12-21",
     "aptitude": {
@@ -866,7 +866,7 @@
     "charId": 1049,
     "name": "[祝祭遊戯]ナカヤマフェスタ",
     "char": "ナカヤマフェスタ",
-    "charCn": "",
+    "charCn": "中山庆典",
     "rarity": 3,
     "release": "2025-11-28",
     "aptitude": {
@@ -902,7 +902,7 @@
     "charId": 1119,
     "name": "[雪白の夢路]ドリームジャーニー",
     "char": "ドリームジャーニー",
-    "charCn": "",
+    "charCn": "梦之旅",
     "rarity": 3,
     "release": "2025-11-28",
     "aptitude": {
@@ -938,7 +938,7 @@
     "charId": 1114,
     "name": "[Heroína Inocente]ブエナビスタ",
     "char": "ブエナビスタ",
-    "charCn": "",
+    "charCn": "迷人景致",
     "rarity": 3,
     "release": "2025-11-19",
     "aptitude": {
@@ -974,7 +974,7 @@
     "charId": 1100,
     "name": "[柔灯・湯の香の装い]ワンダーアキュート",
     "char": "ワンダーアキュート",
-    "charCn": "",
+    "charCn": "奇锐骏",
     "rarity": 3,
     "release": "2025-11-10",
     "aptitude": {
@@ -1010,7 +1010,7 @@
     "charId": 1080,
     "name": "[宵闇ネオカグラ]トランセンド",
     "char": "トランセンド",
-    "charCn": "",
+    "charCn": "创升",
     "rarity": 3,
     "release": "2025-10-29",
     "aptitude": {
@@ -1046,7 +1046,7 @@
     "charId": 1092,
     "name": "[まんなか◎スポットライト]ダンツフレーム",
     "char": "ダンツフレーム",
-    "charCn": "",
+    "charCn": "烈焰快驹",
     "rarity": 3,
     "release": "2025-10-18",
     "aptitude": {
@@ -1118,7 +1118,7 @@
     "charId": 1028,
     "name": "[マジックナイトガーランド]ヒシアケボノ",
     "char": "ヒシアケボノ",
-    "charCn": "",
+    "charCn": "菱曙",
     "rarity": 3,
     "release": "2025-09-29",
     "aptitude": {
@@ -1190,7 +1190,7 @@
     "charId": 1095,
     "name": "[精粋]ビリーヴ",
     "char": "ビリーヴ",
-    "charCn": "",
+    "charCn": "信念",
     "rarity": 3,
     "release": "2025-09-19",
     "aptitude": {
@@ -1226,7 +1226,7 @@
     "charId": 1081,
     "name": "[Red Devil Gear]エスポワールシチー",
     "char": "エスポワールシチー",
-    "charCn": "",
+    "charCn": "希望之城",
     "rarity": 3,
     "release": "2025-09-09",
     "aptitude": {
@@ -1262,7 +1262,7 @@
     "charId": 1093,
     "name": "[秋日色アンダンテ]ケイエスミラクル",
     "char": "ケイエスミラクル",
-    "charCn": "",
+    "charCn": "凯斯奇迹",
     "rarity": 3,
     "release": "2025-08-29",
     "aptitude": {
@@ -1298,7 +1298,7 @@
     "charId": 1106,
     "name": "[ハッピー・リトル・ノーツ]ヒシミラクル",
     "char": "ヒシミラクル",
-    "charCn": "",
+    "charCn": "菱钻奇宝",
     "rarity": 3,
     "release": "2025-08-29",
     "aptitude": {
@@ -1334,7 +1334,7 @@
     "charId": 1097,
     "name": "[緋想の誓衣]スティルインラブ",
     "char": "スティルインラブ",
-    "charCn": "",
+    "charCn": "爱如往昔",
     "rarity": 3,
     "release": "2025-08-24",
     "aptitude": {
@@ -1370,7 +1370,7 @@
     "charId": 1091,
     "name": "[Éclat d'été]ヴィブロス",
     "char": "ヴィブロス",
-    "charCn": "",
+    "charCn": "强击",
     "rarity": 3,
     "release": "2025-08-14",
     "aptitude": {
@@ -1406,7 +1406,7 @@
     "charId": 1088,
     "name": "[晴島花麗]サトノクラウン",
     "char": "サトノクラウン",
-    "charCn": "",
+    "charCn": "里见皇冠",
     "rarity": 3,
     "release": "2025-07-31",
     "aptitude": {
@@ -1442,7 +1442,7 @@
     "charId": 1089,
     "name": "[夏凪ネイビードロップ]シュヴァルグラン",
     "char": "シュヴァルグラン",
-    "charCn": "",
+    "charCn": "高尚骏逸",
     "rarity": 3,
     "release": "2025-07-31",
     "aptitude": {
@@ -1478,7 +1478,7 @@
     "charId": 1109,
     "name": "[Eternal Fairytale]ラインクラフト",
     "char": "ラインクラフト",
-    "charCn": "",
+    "charCn": "莱茵力量",
     "rarity": 3,
     "release": "2025-07-22",
     "aptitude": {
@@ -1514,7 +1514,7 @@
     "charId": 1113,
     "name": "[Assorted Cuteness♡]フサイチパンドラ",
     "char": "フサイチパンドラ",
-    "charCn": "",
+    "charCn": "房一潘多拉",
     "rarity": 3,
     "release": "2025-07-22",
     "aptitude": {
@@ -1622,7 +1622,7 @@
     "charId": 1133,
     "name": "[陸離の編纂者]クロノジェネシス",
     "char": "クロノジェネシス",
-    "charCn": "",
+    "charCn": "创世驹",
     "rarity": 3,
     "release": "2025-06-13",
     "aptitude": {
@@ -1657,7 +1657,7 @@
     "charId": 1086,
     "name": "[Untouchable Eden]メジロラモーヌ",
     "char": "メジロラモーヌ",
-    "charCn": "",
+    "charCn": "目白高峰",
     "rarity": 3,
     "release": "2025-05-30",
     "aptitude": {
@@ -1693,7 +1693,7 @@
     "charId": 1110,
     "name": "[Twinbell Queen]シーザリオ",
     "char": "シーザリオ",
-    "charCn": "",
+    "charCn": "西沙里奥",
     "rarity": 3,
     "release": "2025-05-30",
     "aptitude": {
@@ -1729,7 +1729,7 @@
     "charId": 1132,
     "name": "[9927 Wishes]ラヴズオンリーユー",
     "char": "ラヴズオンリーユー",
-    "charCn": "",
+    "charCn": "唯独爱你",
     "rarity": 3,
     "release": "2025-05-21",
     "aptitude": {
@@ -1765,7 +1765,7 @@
     "charId": 1090,
     "name": "[Le beau sommet]ヴィルシーナ",
     "char": "ヴィルシーナ",
-    "charCn": "",
+    "charCn": "极峰",
     "rarity": 3,
     "release": "2025-05-12",
     "aptitude": {
@@ -1837,7 +1837,7 @@
     "charId": 1098,
     "name": "[光彩陸離☆招福衣]コパノリッキー",
     "char": "コパノリッキー",
-    "charCn": "",
+    "charCn": "小林历奇",
     "rarity": 3,
     "release": "2025-04-30",
     "aptitude": {
@@ -1873,7 +1873,7 @@
     "charId": 1127,
     "name": "[義心の黒焔]フェノーメノ",
     "char": "フェノーメノ",
-    "charCn": "",
+    "charCn": "超常骏骥",
     "rarity": 3,
     "release": "2025-04-21",
     "aptitude": {
@@ -1909,7 +1909,7 @@
     "charId": 1070,
     "name": "[Louve stellaire]シリウスシンボリ",
     "char": "シリウスシンボリ",
-    "charCn": "",
+    "charCn": "天狼星象征",
     "rarity": 3,
     "release": "2025-04-10",
     "aptitude": {
@@ -1945,7 +1945,7 @@
     "charId": 1084,
     "name": "[With a Twist]タニノギムレット",
     "char": "タニノギムレット",
-    "charCn": "",
+    "charCn": "谷水琴蕾",
     "rarity": 3,
     "release": "2025-03-31",
     "aptitude": {
@@ -2017,7 +2017,7 @@
     "charId": 1096,
     "name": "[紅色塗早駆具足]ノーリーズン",
     "char": "ノーリーズン",
-    "charCn": "",
+    "charCn": "莫名其妙",
     "rarity": 3,
     "release": "2025-03-21",
     "aptitude": {
@@ -2053,7 +2053,7 @@
     "charId": 1131,
     "name": "[すまいる・まい・うぇい！]グランアレグリア",
     "char": "グランアレグリア",
-    "charCn": "",
+    "charCn": "放声欢呼",
     "rarity": 3,
     "release": "2025-03-11",
     "aptitude": {
@@ -2089,7 +2089,7 @@
     "charId": 1115,
     "name": "[総攬]オルフェーヴル",
     "char": "オルフェーヴル",
-    "charCn": "",
+    "charCn": "黄金巨匠",
     "rarity": 3,
     "release": "2025-02-24",
     "aptitude": {
@@ -2125,7 +2125,7 @@
     "charId": 1073,
     "name": "[志、高し、強し！]ツルマルツヨシ",
     "char": "ツルマルツヨシ",
-    "charCn": "",
+    "charCn": "鹤丸刚志",
     "rarity": 2,
     "release": "2025-02-14",
     "aptitude": {
@@ -2161,7 +2161,7 @@
     "charId": 1078,
     "name": "[Sugary Wind]ヤマニンゼファー",
     "char": "ヤマニンゼファー",
-    "charCn": "",
+    "charCn": "也文摄辉",
     "rarity": 3,
     "release": "2025-01-31",
     "aptitude": {
@@ -2197,7 +2197,7 @@
     "charId": 1087,
     "name": "[溶けない砂糖菓子]アストンマーチャン",
     "char": "アストンマーチャン",
-    "charCn": "",
+    "charCn": "真弓快车",
     "rarity": 3,
     "release": "2025-01-31",
     "aptitude": {
@@ -2233,7 +2233,7 @@
     "charId": 1079,
     "name": "[衣錦還郷の瑞星]フリオーソ",
     "char": "フリオーソ",
-    "charCn": "",
+    "charCn": "狂怒乐章",
     "rarity": 3,
     "release": "2025-01-20",
     "aptitude": {
@@ -2305,7 +2305,7 @@
     "charId": 1057,
     "name": "[絢爛花道歌舞く君]ミスターシービー",
     "char": "ミスターシービー",
-    "charCn": "",
+    "charCn": "千明代表",
     "rarity": 3,
     "release": "2024-12-27",
     "aptitude": {
@@ -2341,7 +2341,7 @@
     "charId": 1104,
     "name": "[雅号・墨龍]カツラギエース",
     "char": "カツラギエース",
-    "charCn": "",
+    "charCn": "葛城王牌",
     "rarity": 3,
     "release": "2024-12-27",
     "aptitude": {
@@ -2413,7 +2413,7 @@
     "charId": 1117,
     "name": "[ドラマティック・チュチュ]ウインバリアシオン",
     "char": "ウインバリアシオン",
-    "charCn": "",
+    "charCn": "凯旋芭蕾",
     "rarity": 3,
     "release": "2024-12-10",
     "aptitude": {
@@ -2449,7 +2449,7 @@
     "charId": 1033,
     "name": "[Glacialis Vega]アドマイヤベガ",
     "char": "アドマイヤベガ",
-    "charCn": "",
+    "charCn": "爱慕织姬",
     "rarity": 3,
     "release": "2024-11-28",
     "aptitude": {
@@ -2485,7 +2485,7 @@
     "charId": 1077,
     "name": "[Celestial Road]ナリタトップロード",
     "char": "ナリタトップロード",
-    "charCn": "",
+    "charCn": "成田路",
     "rarity": 3,
     "release": "2024-11-28",
     "aptitude": {
@@ -2521,7 +2521,7 @@
     "charId": 1111,
     "name": "[Inherited Hope]エアメサイア",
     "char": "エアメサイア",
-    "charCn": "",
+    "charCn": "空中救世主",
     "rarity": 3,
     "release": "2024-11-18",
     "aptitude": {
@@ -2629,7 +2629,7 @@
     "charId": 1124,
     "name": "[POPPING!]バブルガムフェロー",
     "char": "バブルガムフェロー",
-    "charCn": "",
+    "charCn": "吹波糖",
     "rarity": 3,
     "release": "2024-10-11",
     "aptitude": {
@@ -2737,7 +2737,7 @@
     "charId": 1121,
     "name": "[Chevalier fidèle]デュランダル",
     "char": "デュランダル",
-    "charCn": "",
+    "charCn": "多旺达",
     "rarity": 3,
     "release": "2024-09-20",
     "aptitude": {
@@ -2773,7 +2773,7 @@
     "charId": 1110,
     "name": "[Future Weaver]シーザリオ",
     "char": "シーザリオ",
-    "charCn": "",
+    "charCn": "西沙里奥",
     "rarity": 3,
     "release": "2024-09-10",
     "aptitude": {
@@ -2845,7 +2845,7 @@
     "charId": 1105,
     "name": "[Like “ZEER”]ネオユニヴァース",
     "char": "ネオユニヴァース",
-    "charCn": "",
+    "charCn": "新宇宙",
     "rarity": 3,
     "release": "2024-08-30",
     "aptitude": {
@@ -2881,7 +2881,7 @@
     "charId": 1116,
     "name": "[Regina dei fiori]ジェンティルドンナ",
     "char": "ジェンティルドンナ",
-    "charCn": "",
+    "charCn": "贵妇人",
     "rarity": 3,
     "release": "2024-08-24",
     "aptitude": {
@@ -2953,7 +2953,7 @@
     "charId": 1099,
     "name": "[パステルマリン・ロコドル]ホッコータルマエ",
     "char": "ホッコータルマエ",
-    "charCn": "",
+    "charCn": "北港火山",
     "rarity": 3,
     "release": "2024-07-29",
     "aptitude": {
@@ -2989,7 +2989,7 @@
     "charId": 1120,
     "name": "[真実一路]カルストンライトオ",
     "char": "カルストンライトオ",
-    "charCn": "",
+    "charCn": "金镇之光",
     "rarity": 3,
     "release": "2024-07-19",
     "aptitude": {
@@ -3061,7 +3061,7 @@
     "charId": 1119,
     "name": "[夢路のよすが]ドリームジャーニー",
     "char": "ドリームジャーニー",
-    "charCn": "",
+    "charCn": "梦之旅",
     "rarity": 3,
     "release": "2024-06-26",
     "aptitude": {
@@ -3097,7 +3097,7 @@
     "charId": 1094,
     "name": "[王者の喊声]ジャングルポケット",
     "char": "ジャングルポケット",
-    "charCn": "",
+    "charCn": "森林宝穴",
     "rarity": 3,
     "release": "2024-06-13",
     "aptitude": {
@@ -3205,7 +3205,7 @@
     "charId": 1082,
     "name": "[Looking Fly!]ノースフライト",
     "char": "ノースフライト",
-    "charCn": "",
+    "charCn": "北方飞翔",
     "rarity": 3,
     "release": "2024-05-20",
     "aptitude": {
@@ -3457,7 +3457,7 @@
     "charId": 1085,
     "name": "[Flowing Blue]ダイイチルビー",
     "char": "ダイイチルビー",
-    "charCn": "",
+    "charCn": "第一红宝石",
     "rarity": 3,
     "release": "2024-03-29",
     "aptitude": {
@@ -3493,7 +3493,7 @@
     "charId": 1109,
     "name": "[Dream Successor]ラインクラフト",
     "char": "ラインクラフト",
-    "charCn": "",
+    "charCn": "莱茵力量",
     "rarity": 3,
     "release": "2024-03-21",
     "aptitude": {
@@ -3529,7 +3529,7 @@
     "charId": 1080,
     "name": "[ZOKU-ZOKU GIZMO]トランセンド",
     "char": "トランセンド",
-    "charCn": "",
+    "charCn": "创升",
     "rarity": 3,
     "release": "2024-03-12",
     "aptitude": {
@@ -3565,7 +3565,7 @@
     "charId": 1108,
     "name": "[Red in Black]ドゥラメンテ",
     "char": "ドゥラメンテ",
-    "charCn": "",
+    "charCn": "大鸣大放",
     "rarity": 3,
     "release": "2024-02-24",
     "aptitude": {
@@ -3745,7 +3745,7 @@
     "charId": 1091,
     "name": "[Voyage étincelant]ヴィブロス",
     "char": "ヴィブロス",
-    "charCn": "",
+    "charCn": "强击",
     "rarity": 3,
     "release": "2024-01-19",
     "aptitude": {
@@ -3853,7 +3853,7 @@
     "charId": 1089,
     "name": "[Grand itinéraire]シュヴァルグラン",
     "char": "シュヴァルグラン",
-    "charCn": "",
+    "charCn": "高尚骏逸",
     "rarity": 3,
     "release": "2023-12-20",
     "aptitude": {
@@ -3889,7 +3889,7 @@
     "charId": 1088,
     "name": "[黒翠千里行]サトノクラウン",
     "char": "サトノクラウン",
-    "charCn": "",
+    "charCn": "里见皇冠",
     "rarity": 3,
     "release": "2023-12-11",
     "aptitude": {
@@ -3961,7 +3961,7 @@
     "charId": 1074,
     "name": "[清らに星澄むスノーロリィタ]メジロブライト",
     "char": "メジロブライト",
-    "charCn": "",
+    "charCn": "目白光明",
     "rarity": 3,
     "release": "2023-11-30",
     "aptitude": {
@@ -4069,7 +4069,7 @@
     "charId": 1039,
     "name": "[水干撫子]カワカミプリンセス",
     "char": "カワカミプリンセス",
-    "charCn": "",
+    "charCn": "川上公主",
     "rarity": 3,
     "release": "2023-10-30",
     "aptitude": {
@@ -4105,7 +4105,7 @@
     "charId": 1086,
     "name": "[オニキス・ライン]メジロラモーヌ",
     "char": "メジロラモーヌ",
-    "charCn": "",
+    "charCn": "目白高峰",
     "rarity": 3,
     "release": "2023-10-19",
     "aptitude": {
@@ -4177,7 +4177,7 @@
     "charId": 1083,
     "name": "[Jetblack Automaton]シンボリクリスエス",
     "char": "シンボリクリスエス",
-    "charCn": "",
+    "charCn": "吉兆",
     "rarity": 3,
     "release": "2023-09-29",
     "aptitude": {
@@ -4213,7 +4213,7 @@
     "charId": 1093,
     "name": "[Prism]ケイエスミラクル",
     "char": "ケイエスミラクル",
-    "charCn": "",
+    "charCn": "凯斯奇迹",
     "rarity": 3,
     "release": "2023-09-20",
     "aptitude": {
@@ -4321,7 +4321,7 @@
     "charId": 1077,
     "name": "[The Proud Road]ナリタトップロード",
     "char": "ナリタトップロード",
-    "charCn": "",
+    "charCn": "成田路",
     "rarity": 3,
     "release": "2023-08-24",
     "aptitude": {
@@ -4429,7 +4429,7 @@
     "charId": 1070,
     "name": "[Féroce]シリウスシンボリ",
     "char": "シリウスシンボリ",
-    "charCn": "",
+    "charCn": "天狼星象征",
     "rarity": 3,
     "release": "2023-07-21",
     "aptitude": {
@@ -4465,7 +4465,7 @@
     "charId": 1104,
     "name": "[登竜之頂]カツラギエース",
     "char": "カツラギエース",
-    "charCn": "",
+    "charCn": "葛城王牌",
     "rarity": 3,
     "release": "2023-07-10",
     "aptitude": {
@@ -4537,7 +4537,7 @@
     "charId": 1053,
     "name": "[Ultra☆Marine]バンブーメモリー",
     "char": "バンブーメモリー",
-    "charCn": "",
+    "charCn": "青竹回忆",
     "rarity": 3,
     "release": "2023-06-29",
     "aptitude": {
@@ -4681,7 +4681,7 @@
     "charId": 1084,
     "name": "[身に纏うケラヴノス]タニノギムレット",
     "char": "タニノギムレット",
-    "charCn": "",
+    "charCn": "谷水琴蕾",
     "rarity": 3,
     "release": "2023-05-19",
     "aptitude": {
@@ -4717,7 +4717,7 @@
     "charId": 1106,
     "name": "[みらくるめーくあっぷ！]ヒシミラクル",
     "char": "ヒシミラクル",
-    "charCn": "",
+    "charCn": "菱钻奇宝",
     "rarity": 3,
     "release": "2023-05-10",
     "aptitude": {
@@ -4825,7 +4825,7 @@
     "charId": 1105,
     "name": "[Universe-Naut]ネオユニヴァース",
     "char": "ネオユニヴァース",
-    "charCn": "",
+    "charCn": "新宇宙",
     "rarity": 3,
     "release": "2023-04-19",
     "aptitude": {
@@ -4861,7 +4861,7 @@
     "charId": 1076,
     "name": "[Saisir le rêve]サクラローレル",
     "char": "サクラローレル",
-    "charCn": "",
+    "charCn": "樱花桂冠",
     "rarity": 3,
     "release": "2023-04-10",
     "aptitude": {
@@ -4933,7 +4933,7 @@
     "charId": 1071,
     "name": "[Neige Émeraude]メジロアルダン",
     "char": "メジロアルダン",
-    "charCn": "",
+    "charCn": "目白阿尔丹",
     "rarity": 3,
     "release": "2023-03-29",
     "aptitude": {
@@ -4969,7 +4969,7 @@
     "charId": 1083,
     "name": "[Onyx Soldier]シンボリクリスエス",
     "char": "シンボリクリスエス",
-    "charCn": "",
+    "charCn": "吉兆",
     "rarity": 3,
     "release": "2023-03-20",
     "aptitude": {
@@ -5005,7 +5005,7 @@
     "charId": 1085,
     "name": "[華麗なる紅玉]ダイイチルビー",
     "char": "ダイイチルビー",
-    "charCn": "",
+    "charCn": "第一红宝石",
     "rarity": 3,
     "release": "2023-03-10",
     "aptitude": {
@@ -5041,7 +5041,7 @@
     "charId": 1057,
     "name": "[Clear Bliss]ミスターシービー",
     "char": "ミスターシービー",
-    "charCn": "",
+    "charCn": "千明代表",
     "rarity": 3,
     "release": "2023-02-24",
     "aptitude": {
@@ -5113,7 +5113,7 @@
     "charId": 1043,
     "name": "[Wicked Punk]シンコウウインディ",
     "char": "シンコウウインディ",
-    "charCn": "",
+    "charCn": "新光风",
     "rarity": 3,
     "release": "2023-02-13",
     "aptitude": {
@@ -5257,7 +5257,7 @@
     "charId": 1099,
     "name": "[スター・ライト・シップ]ホッコータルマエ",
     "char": "ホッコータルマエ",
-    "charCn": "",
+    "charCn": "北港火山",
     "rarity": 3,
     "release": "2023-01-10",
     "aptitude": {
@@ -5365,7 +5365,7 @@
     "charId": 1016,
     "name": "[餓狼]ナリタブライアン",
     "char": "ナリタブライアン",
-    "charCn": "",
+    "charCn": "成田白仁",
     "rarity": 3,
     "release": "2022-12-20",
     "aptitude": {
@@ -5509,7 +5509,7 @@
     "charId": 1100,
     "name": "[Butterfly Sting]ワンダーアキュート",
     "char": "ワンダーアキュート",
-    "charCn": "",
+    "charCn": "奇锐骏",
     "rarity": 3,
     "release": "2022-11-17",
     "aptitude": {
@@ -5545,7 +5545,7 @@
     "charId": 1049,
     "name": "[死中求活]ナカヤマフェスタ",
     "char": "ナカヤマフェスタ",
-    "charCn": "",
+    "charCn": "中山庆典",
     "rarity": 3,
     "release": "2022-11-09",
     "aptitude": {
@@ -5617,7 +5617,7 @@
     "charId": 1034,
     "name": "[夢ノ金原]イナリワン",
     "char": "イナリワン",
-    "charCn": "",
+    "charCn": "稻荷一",
     "rarity": 3,
     "release": "2022-10-28",
     "aptitude": {
@@ -5653,7 +5653,7 @@
     "charId": 1078,
     "name": "[Fluttertail Spirit]ヤマニンゼファー",
     "char": "ヤマニンゼファー",
-    "charCn": "",
+    "charCn": "也文摄辉",
     "rarity": 3,
     "release": "2022-10-19",
     "aptitude": {
@@ -5689,7 +5689,7 @@
     "charId": 1087,
     "name": "[Flare]アストンマーチャン",
     "char": "アストンマーチャン",
-    "charCn": "",
+    "charCn": "真弓快车",
     "rarity": 3,
     "release": "2022-10-11",
     "aptitude": {
@@ -5977,7 +5977,7 @@
     "charId": 1098,
     "name": "[陰陽八卦☆開運衣]コパノリッキー",
     "char": "コパノリッキー",
-    "charCn": "",
+    "charCn": "小林历奇",
     "rarity": 3,
     "release": "2022-08-19",
     "aptitude": {
@@ -6013,7 +6013,7 @@
     "charId": 1053,
     "name": "[黒鉄の大志]バンブーメモリー",
     "char": "バンブーメモリー",
-    "charCn": "",
+    "charCn": "青竹回忆",
     "rarity": 3,
     "release": "2022-08-10",
     "aptitude": {
@@ -6301,7 +6301,7 @@
     "charId": 1034,
     "name": "[稲荷所縁江戸紫]イナリワン",
     "char": "イナリワン",
-    "charCn": "",
+    "charCn": "稻荷一",
     "rarity": 3,
     "release": "2022-06-10",
     "aptitude": {
@@ -6373,7 +6373,7 @@
     "charId": 1038,
     "name": "[朔月のマ・シェリ]カレンチャン",
     "char": "カレンチャン",
-    "charCn": "",
+    "charCn": "真机伶",
     "rarity": 3,
     "release": "2022-05-30",
     "aptitude": {
@@ -6697,7 +6697,7 @@
     "charId": 1074,
     "name": "[ブリュニサージュ・ライン]メジロブライト",
     "char": "メジロブライト",
-    "charCn": "",
+    "charCn": "目白光明",
     "rarity": 3,
     "release": "2022-03-18",
     "aptitude": {
@@ -6841,7 +6841,7 @@
     "charId": 1033,
     "name": "[Starry Nocturne]アドマイヤベガ",
     "char": "アドマイヤベガ",
-    "charCn": "",
+    "charCn": "爱慕织姬",
     "rarity": 3,
     "release": "2022-02-16",
     "aptitude": {
@@ -6877,7 +6877,7 @@
     "charId": 1071,
     "name": "[クリノクロア・ライン]メジロアルダン",
     "char": "メジロアルダン",
-    "charCn": "",
+    "charCn": "目白阿尔丹",
     "rarity": 3,
     "release": "2022-02-08",
     "aptitude": {
@@ -7417,7 +7417,7 @@
     "charId": 1039,
     "name": "[プリンセス・オブ・ピンク]カワカミプリンセス",
     "char": "カワカミプリンセス",
-    "charCn": "",
+    "charCn": "川上公主",
     "rarity": 3,
     "release": "2021-10-11",
     "aptitude": {
@@ -7561,7 +7561,7 @@
     "charId": 1028,
     "name": "[ボーノ☆アラモーダ]ヒシアケボノ",
     "char": "ヒシアケボノ",
-    "charCn": "",
+    "charCn": "菱曙",
     "rarity": 3,
     "release": "2021-09-10",
     "aptitude": {
@@ -8065,7 +8065,7 @@
     "charId": 1016,
     "name": "[Maverick]ナリタブライアン",
     "char": "ナリタブライアン",
-    "charCn": "",
+    "charCn": "成田白仁",
     "rarity": 3,
     "release": "2021-05-17",
     "aptitude": {
@@ -8173,7 +8173,7 @@
     "charId": 1038,
     "name": "[フィーユ・エクレール]カレンチャン",
     "char": "カレンチャン",
-    "charCn": "",
+    "charCn": "真机伶",
     "rarity": 3,
     "release": "2021-04-15",
     "aptitude": {
