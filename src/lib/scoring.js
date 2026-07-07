@@ -1,0 +1,113 @@
+export const GRADES = ["S", "A", "B", "C", "D", "E", "F", "G"];
+export const TRACKS = ["芝", "泥"];
+export const DISTANCES = ["短", "英", "中", "长"];
+export const STYLES = ["逃", "先", "差", "追"];
+
+export const DEFAULT_ADAPTABILITY = {
+  track: { "芝": "S", "泥": "S" },
+  dist: { "短": "S", "英": "S", "中": "S", "长": "S" },
+  style: { "逃": "S", "先": "S", "差": "S", "追": "S" },
+};
+
+const ADAPTABILITY_MULTIPLIERS = {
+  S: 1.1,
+  A: 1.1,
+  B: 0.9,
+  C: 0.9,
+  D: 0.8,
+  E: 0.8,
+  F: 0.8,
+  G: 0.7,
+};
+
+const DISCOUNTS_NORMAL = [1, 0.9, 0.8, 0.7, 0.65, 0.6];
+const DISCOUNTS_CUT = [0.9, 0.8, 0.7, 0.6, 0.55, 0.5];
+
+export function conditionType(condition) {
+  if (TRACKS.includes(condition)) return "track";
+  if (DISTANCES.includes(condition)) return "dist";
+  if (STYLES.includes(condition)) return "style";
+  return "general";
+}
+
+export function conditionMultiplier(condition, adaptability) {
+  if (!condition || condition === "通用") return 1;
+  const type = conditionType(condition);
+  if (type === "general") return 1;
+  const grade = adaptability[type]?.[condition];
+  return ADAPTABILITY_MULTIPLIERS[grade] ?? 1;
+}
+
+export function round1(value) {
+  return Math.round(value * 10) / 10;
+}
+
+export function round2(value) {
+  return Math.round(value * 100) / 100;
+}
+
+export function formatNumber(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+export function calculateSkillRows({
+  skills,
+  upgradeMap,
+  hints,
+  hasCut,
+  mode,
+  adaptability,
+}) {
+  const discounts = hasCut ? DISCOUNTS_CUT : DISCOUNTS_NORMAL;
+
+  return skills.map((skill) => {
+    const hint = hints[skill.n] ?? 0;
+    const discountRate = discounts[hint] ?? discounts[0];
+    const testScore = skill.r === "传说" ? skill.e + 1200 : skill.e + 400;
+    const baseScore = round1(skill.a);
+    const adaptabilityScore = round1(
+      baseScore
+        * conditionMultiplier(skill.c1, adaptability)
+        * conditionMultiplier(skill.c2, adaptability),
+    );
+
+    const lowerSkillName = upgradeMap[skill.n];
+    let currentPrice;
+
+    if (lowerSkillName) {
+      const lowerSkill = skills.find((item) => item.n === lowerSkillName);
+      if (lowerSkill) {
+        const lowerHint = hints[lowerSkill.n];
+        const lowerDiscountRate =
+          lowerHint === undefined ? discounts[0] : discounts[lowerHint];
+        currentPrice = round1(
+          (skill.p - lowerSkill.p) * discountRate
+            + lowerSkill.p * lowerDiscountRate,
+        );
+      } else {
+        currentPrice = round1(skill.p * discountRate);
+      }
+    } else {
+      currentPrice = round1(skill.p * discountRate);
+    }
+
+    const numerator = mode === "test" ? testScore : adaptabilityScore;
+    const costPerformance =
+      currentPrice > 0 ? round2((numerator / currentPrice) * 100) : 0;
+
+    return {
+      name: skill.n,
+      rarity: skill.r,
+      condition: skill.c,
+      evalScore: skill.e,
+      totalPT: skill.p,
+      testScore,
+      adaptabilityScore,
+      hint,
+      discountRate,
+      currentPrice,
+      costPerformance,
+      source: skill,
+    };
+  });
+}
