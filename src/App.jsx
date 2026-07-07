@@ -75,6 +75,18 @@ function App() {
     return owned;
   }, [manualSkills, selectedCards]);
 
+  // 技能 -> 提供它的已选支援卡（用于"来源"列显示卡头像）
+  const skillToCards = useMemo(() => {
+    const map = new Map();
+    for (const card of selectedCards) {
+      for (const name of card.skills) {
+        if (!map.has(name)) map.set(name, []);
+        map.get(name).push(card);
+      }
+    }
+    return map;
+  }, [selectedCards]);
+
   const cardResults = useMemo(() => {
     const needle = cardQuery.trim();
     let list = supportCards;
@@ -412,6 +424,7 @@ function App() {
             <thead>
               <tr>
                 <th>技能名</th>
+                <th>来源</th>
                 <th>稀有</th>
                 <th>条件</th>
                 <th>评价分</th>
@@ -435,6 +448,21 @@ function App() {
                   <td className={`skill-name ${row.rarity === "传说" ? "gold" : ""}`}>
                     {row.name}
                     {cnOf(row.name) && <span className="skill-cn">{cnOf(row.name)}</span>}
+                  </td>
+                  <td className="source-cell">
+                    {(skillToCards.get(row.name) ?? []).map((card) => (
+                      <img
+                        key={card.id}
+                        className="source-img"
+                        src={cardImage(card.id)}
+                        alt=""
+                        title={card.charCn || card.char}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ))}
                   </td>
                   <td>
                     <span className={`rarity-tag ${row.rarity === "传说" ? "gold" : "white"}`}>
@@ -464,7 +492,7 @@ function App() {
               ))}
               {!rows.length && (
                 <tr>
-                  <td colSpan="9" className="empty">
+                  <td colSpan="10" className="empty">
                     {ownedOnly ? "先选支援卡或手动添加技能" : "没有匹配的技能"}
                   </td>
                 </tr>

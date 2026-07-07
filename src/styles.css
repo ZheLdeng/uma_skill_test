@@ -575,6 +575,20 @@ tbody tr.double-circle:not(.detected):not(.legend) {
   color: #9a6b00;
 }
 
+.source-cell {
+  white-space: nowrap;
+}
+
+.source-img {
+  width: 24px;
+  height: 24px;
+  margin-right: 3px;
+  border-radius: 4px;
+  object-fit: cover;
+  vertical-align: middle;
+  background: #eef2ef;
+}
+
 .rarity-tag {
   display: inline-block;
   min-width: 26px;
