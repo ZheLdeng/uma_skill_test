@@ -148,11 +148,10 @@ function App() {
     return skills
       .filter(
         (s) =>
-          !ownedSkillNames.has(s.n) &&
-          (s.n.includes(needle) || cnOf(s.n).includes(needle) || cnOf(s.n).toLowerCase().includes(lower)),
+          s.n.includes(needle) || cnOf(s.n).includes(needle) || cnOf(s.n).toLowerCase().includes(lower),
       )
-      .slice(0, 20);
-  }, [ownedSkillNames, skillQuery]);
+      .slice(0, 40);
+  }, [skillQuery]);
 
   const rows = useMemo(() => {
     let next = calculateSkillRows({ skills, upgradeMap, hints, hasCut, mode, adaptability });
@@ -199,10 +198,10 @@ function App() {
     if (uma.aptitude) setAdaptability(JSON.parse(JSON.stringify(uma.aptitude)));
   };
 
-  const addManualSkill = (name) => {
-    setManualSkills((current) => (current.includes(name) ? current : [...current, name]));
-    setSkillQuery("");
-  };
+  const toggleManualSkill = (name) =>
+    setManualSkills((current) =>
+      current.includes(name) ? current.filter((x) => x !== name) : [...current, name],
+    );
   const removeManualSkill = (name) =>
     setManualSkills((current) => current.filter((x) => x !== name));
 
@@ -296,11 +295,11 @@ function App() {
               placeholder="搜索马娘（中/日名），选中自动带入适性与自带技能"
             />
           </div>
-          <div className="uma-grid">
+          <div className="avatar-strip">
             {umaResults.map((uma) => (
               <button
                 key={uma.id}
-                className={`uma-avatar ${selectedUmaId === uma.id ? "active" : ""}`}
+                className={`avatar ${selectedUmaId === uma.id ? "active" : ""}`}
                 onClick={() => selectUma(uma)}
                 title={`${uma.charCn || uma.char}｜${uma.name}`}
                 type="button"
@@ -369,37 +368,21 @@ function App() {
 
           {deck.length >= MAX_DECK && <div className="deck-full">已选满 {MAX_DECK} 张，需先移除再添加</div>}
 
-          <div className="card-list">
+          <div className="avatar-strip">
             {cardResults.map((card) => {
               const active = deck.includes(card.id);
               const full = !active && deck.length >= MAX_DECK;
+              const label = `${CARD_RARITY_LABELS[card.rarity] ?? ""} ${CARD_TYPE_LABELS[card.type] ?? ""}｜${card.charCn || card.char}｜${card.skills.length}技能`;
               return (
                 <button
                   key={card.id}
-                  className={`card-row type-${card.type} ${active ? "active" : ""} ${full ? "disabled" : ""}`}
+                  className={`avatar ${active ? "active" : ""} ${full ? "disabled" : ""}`}
                   onClick={() => toggleCard(card.id)}
                   disabled={full}
+                  title={label}
                   type="button"
                 >
-                  <img
-                    className="card-img"
-                    src={cardImage(card.id)}
-                    alt=""
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.style.visibility = "hidden";
-                    }}
-                  />
-                  <span className="card-rarity">{CARD_RARITY_LABELS[card.rarity] ?? ""}</span>
-                  <span className="card-type">{CARD_TYPE_LABELS[card.type] ?? card.type}</span>
-                  <span className="card-names">
-                    <span className="card-name-cn" title={card.name}>{card.charCn || card.char}</span>
-                    {card.charCn && card.charCn !== card.char && (
-                      <span className="card-name-jp">{card.char}</span>
-                    )}
-                  </span>
-                  <span className="card-skillcount">{card.skills.length} 技能</span>
-                  {active ? <X size={14} /> : <Plus size={14} />}
+                  <img src={cardImage(card.id)} alt={card.charCn || card.char} loading="lazy" onError={hideImg} />
                 </button>
               );
             })}
@@ -417,21 +400,24 @@ function App() {
           </div>
           {skillResults.length > 0 && (
             <div className="skill-suggest">
-              {skillResults.map((skill) => (
-                <button
-                  key={skill.n}
-                  className="suggest-item"
-                  onClick={() => addManualSkill(skill.n)}
-                  type="button"
-                >
-                  <Plus size={13} />
-                  <span className="suggest-name">
-                    {skill.n}
-                    {cnOf(skill.n) && <em className="suggest-cn">{cnOf(skill.n)}</em>}
-                  </span>
-                  <span className="suggest-meta">{skill.r}</span>
-                </button>
-              ))}
+              {skillResults.map((skill) => {
+                const picked = manualSkills.includes(skill.n);
+                return (
+                  <button
+                    key={skill.n}
+                    className={`suggest-item ${picked ? "active" : ""}`}
+                    onClick={() => toggleManualSkill(skill.n)}
+                    type="button"
+                  >
+                    {picked ? <X size={13} /> : <Plus size={13} />}
+                    <span className="suggest-name">
+                      {skill.n}
+                      {cnOf(skill.n) && <em className="suggest-cn">{cnOf(skill.n)}</em>}
+                    </span>
+                    <span className="suggest-meta">{skill.r === "传说" ? "金" : "白"}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
           {manualSkills.length > 0 && (
