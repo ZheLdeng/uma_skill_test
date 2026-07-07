@@ -21,6 +21,10 @@ const DATA_DIR = path.resolve(__dirname, "../src/data");
 const CARDS_PATH = path.join(DATA_DIR, "support-cards.json");
 const SKILL_CN_PATH = path.join(DATA_DIR, "skill-cn.json");
 const SKILLS_PATH = path.join(DATA_DIR, "skills.json");
+const UMA_PATH = path.join(DATA_DIR, "uma.json");
+
+// 适性数组（GameTora character-cards.aptitude）顺序 -> 我们的 adaptability 结构
+const APT_ORDER = ["芝", "泥", "短", "英", "中", "长", "逃", "先", "差", "追"];
 
 const GT = "https://gametora.com";
 const BW = "https://wiki.biligame.com/umamusume/api.php";
@@ -36,10 +40,11 @@ async function fetchJson(url) {
   return res.json();
 }
 
-/** 取模板某字段值（截到换行/竖线/右花括号）。 */
+/** 取模板某字段值（截到换行/竖线/右花括号），并清掉 <br> 及其后内容（如"流星<br>Shooting star"）。 */
 function tplField(content, name) {
   const m = content.match(new RegExp(`\\|\\s*${name}\\s*=\\s*([^\\n|}]*)`));
-  return m ? m[1].trim() : "";
+  if (!m) return "";
+  return m[1].split(/<br\s*\/?>/i)[0].trim();
 }
 
 /** 枚举 bwiki 中引用某模板的所有页面，返回其 wikitext 内容数组。 */
@@ -95,18 +100,20 @@ async function fetchBwikiSkillCn() {
   return map;
 }
 
-/** 支援卡：ID -> { cn 全名, charCn 角色名 }（bwiki Template:支援卡）。 */
+/** 支援卡：返回 { cardMap: ID->{cn,charCn}, charMap: 角色ID->角色中文名 }（bwiki Template:支援卡）。 */
 async function fetchBwikiCardCn() {
   const pages = await fetchBwikiPages("Template:支援卡");
-  const map = new Map();
+  const cardMap = new Map();
+  const charMap = new Map();
   for (const content of pages) {
     const id = tplField(content, "ID");
     const cn = tplField(content, "中文名");
     const charCn = tplField(content, "关联角色");
-    // 最新卡常只填了角色中文名(关联角色)而没填完整中文名(中文名)，也要收录
-    if (id && (cn || charCn)) map.set(id, { cn, charCn });
+    const charId = tplField(content, "关联角色id");
+    if (id && (cn || charCn)) cardMap.set(id, { cn, charCn });
+    if (charId && charCn) charMap.set(charId, charCn);
   }
-  return map;
+  return { cardMap, charMap };
 }
 
 async function main() {
@@ -117,17 +124,19 @@ async function main() {
   const skillHash = manifest["skills"];
   if (!cardHash || !skillHash) throw new Error("GameTora manifest 结构变化，找不到 support-cards / skills");
 
+  const charHash = manifest["character-cards"];
   const cards = await fetchJson(`${GT}/data/umamusume/support-cards.${cardHash}.json`);
   const gtSkills = await fetchJson(`${GT}/data/umamusume/skills.${skillHash}.json`);
-  console.log(`[data] GameTora 支援卡 ${cards.length}，技能 ${gtSkills.length}`);
+  const charCards = charHash ? await fetchJson(`${GT}/data/umamusume/character-cards.${charHash}.json`) : [];
+  console.log(`[data] GameTora 支援卡 ${cards.length}，技能 ${gtSkills.length}，育成马 ${charCards.length}`);
 
   // ---- bilibili wiki 中文名（日服技能页，含中文译名）----
   console.log("[data] 读取 bwiki 技能中文名（Template:技能）…");
   const skillCnByJp = await fetchBwikiSkillCn();
   console.log(`[data] bwiki 技能中文名 ${skillCnByJp.size} 条`);
   console.log("[data] 读取 bwiki 支援卡中文名（Template:支援卡）…");
-  const cardCnById = await fetchBwikiCardCn();
-  console.log(`[data] bwiki 支援卡中文名 ${cardCnById.size} 条`);
+  const { cardMap: cardCnById, charMap: charCnById } = await fetchBwikiCardCn();
+  console.log(`[data] bwiki 支援卡中文名 ${cardCnById.size} 条，角色中文名 ${charCnById.size} 条`);
 
   const id2jp = new Map(gtSkills.map((s) => [s.id, s.jpname]));
   const ourSkills = JSON.parse(fs.readFileSync(SKILLS_PATH, "utf8"));
@@ -184,6 +193,44 @@ async function main() {
 
   console.log(`[data] 生成 ${out.length} 张卡，跳过未匹配技能 ${skipped}`);
 
+  // ---- 育成马娘 ----
+  const umaOut = charCards
+    .filter((c) => Array.isArray(c.aptitude) && c.aptitude.length === 10)
+    .map((c) => {
+      const apt = {};
+      APT_ORDER.forEach((key, i) => (apt[key] = c.aptitude[i] || "G"));
+      const aptitude = {
+        track: { 芝: apt["芝"], 泥: apt["泥"] },
+        dist: { 短: apt["短"], 英: apt["英"], 中: apt["中"], 长: apt["长"] },
+        style: { 逃: apt["逃"], 先: apt["先"], 差: apt["差"], 追: apt["追"] },
+      };
+      // 自带白技能（初期技能，且在本地技能库里）
+      const innate = [];
+      for (const id of c.skills_innate ?? []) {
+        const jp = id2jp.get(id);
+        if (jp && ourSet.has(normName(jp))) innate.push(normName(jp));
+      }
+      // 固有金技能
+      const uJp = id2jp.get((c.skills_unique ?? [])[0]);
+      const unique = uJp ? { name: uJp, nameCn: skillCnByJp.get(normName(uJp)) ?? "" } : null;
+
+      return {
+        id: c.card_id,
+        charId: c.char_id,
+        name: `${c.title_jp ?? c.title ?? ""}${c.name_jp ?? c.name_en ?? ""}`,
+        char: c.name_jp ?? c.name_en ?? "",
+        charCn: charCnById.get(String(c.char_id)) ?? "",
+        rarity: Number(c.rarity) || 0,
+        release: c.release ?? "",
+        aptitude,
+        innate: [...new Set(innate)],
+        unique,
+      };
+    })
+    .filter((c) => c.id)
+    .sort((a, b) => (b.release || "").localeCompare(a.release || "") || b.rarity - a.rarity);
+  console.log(`[data] 生成育成马 ${umaOut.length}（角色中文名覆盖 ${umaOut.filter((u) => u.charCn).length}）`);
+
   if (fs.existsSync(CARDS_PATH)) {
     const old = JSON.parse(fs.readFileSync(CARDS_PATH, "utf8"));
     const oldIds = new Set(old.map((c) => c.id));
@@ -197,7 +244,8 @@ async function main() {
   }
   fs.writeFileSync(CARDS_PATH, JSON.stringify(out, null, 2) + "\n", "utf8");
   fs.writeFileSync(SKILL_CN_PATH, JSON.stringify(skillCn, null, 2) + "\n", "utf8");
-  console.log(`\n[data] 已写入:\n  ${CARDS_PATH}\n  ${SKILL_CN_PATH}`);
+  fs.writeFileSync(UMA_PATH, JSON.stringify(umaOut, null, 2) + "\n", "utf8");
+  console.log(`\n[data] 已写入:\n  ${CARDS_PATH}\n  ${SKILL_CN_PATH}\n  ${UMA_PATH}`);
 }
 
 main().catch((error) => {

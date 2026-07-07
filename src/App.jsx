@@ -4,11 +4,19 @@ import skills from "./data/skills.json";
 import upgradeMap from "./data/upgrade-map.json";
 import supportCards from "./data/support-cards.json";
 import skillCn from "./data/skill-cn.json";
+import umaList from "./data/uma.json";
 
 const MAX_DECK = 6;
 const cardImage = (id) =>
   `https://gametora.com/images/umamusume/supports/support_card_s_${id}.png`;
+const umaThumb = (id) =>
+  `https://gametora.com/images/umamusume/characters/thumb/chara_stand_${String(id).slice(0, 4)}_${id}.png`;
+const umaIcon = (charId) =>
+  `https://gametora.com/images/umamusume/characters/icons/chr_icon_${charId}.png`;
 const cnOf = (name) => skillCn[name] ?? "";
+const hideImg = (e) => {
+  e.currentTarget.style.display = "none";
+};
 import {
   calculateSkillRows,
   DEFAULT_ADAPTABILITY,
@@ -47,6 +55,8 @@ function App() {
   const [adaptability, setAdaptability] = useState(cloneAdaptability);
   const [hints, setHints] = useState({});
 
+  const [selectedUmaId, setSelectedUmaId] = useState(null);
+  const [umaQuery, setUmaQuery] = useState("");
   const [deck, setDeck] = useState([]); // 选中的支援卡 id
   const [manualSkills, setManualSkills] = useState([]); // 手动添加的技能名
   const [cardQuery, setCardQuery] = useState("");
@@ -67,13 +77,40 @@ function App() {
     [cardById, deck],
   );
 
+  const selectedUma = useMemo(
+    () => umaList.find((u) => u.id === selectedUmaId) ?? null,
+    [selectedUmaId],
+  );
+
+  const umaSkillNames = useMemo(
+    () => new Set(selectedUma?.innate ?? []),
+    [selectedUma],
+  );
+
+  const cardSkillNames = useMemo(() => {
+    const set = new Set();
+    for (const card of selectedCards) for (const name of card.skills) set.add(name);
+    return set;
+  }, [selectedCards]);
+
+  const umaResults = useMemo(() => {
+    const needle = umaQuery.trim();
+    if (!needle) return umaList.slice(0, 40);
+    return umaList
+      .filter(
+        (u) => u.name.includes(needle) || u.char.includes(needle) || (u.charCn && u.charCn.includes(needle)),
+      )
+      .slice(0, 40);
+  }, [umaQuery]);
+
   const ownedSkillNames = useMemo(() => {
     const owned = new Set(manualSkills);
     for (const card of selectedCards) {
       for (const name of card.skills) owned.add(name);
     }
+    for (const name of umaSkillNames) owned.add(name);
     return owned;
-  }, [manualSkills, selectedCards]);
+  }, [manualSkills, selectedCards, umaSkillNames]);
 
   // 技能 -> 提供它的已选支援卡（用于"来源"列显示卡头像）
   const skillToCards = useMemo(() => {
@@ -153,6 +190,15 @@ function App() {
       return [...current, id];
     });
 
+  const selectUma = (uma) => {
+    if (selectedUmaId === uma.id) {
+      setSelectedUmaId(null);
+      return;
+    }
+    setSelectedUmaId(uma.id);
+    if (uma.aptitude) setAdaptability(JSON.parse(JSON.stringify(uma.aptitude)));
+  };
+
   const addManualSkill = (name) => {
     setManualSkills((current) => (current.includes(name) ? current : [...current, name]));
     setSkillQuery("");
@@ -174,6 +220,7 @@ function App() {
   };
 
   const reset = () => {
+    setSelectedUmaId(null);
     setDeck([]);
     setManualSkills([]);
     setHints({});
@@ -181,14 +228,21 @@ function App() {
     setAdaptability(cloneAdaptability());
   };
 
-  // 把当前结果表里的技能设为某 Hint 等级（level=null 清空）。whiteOnly：只作用白（普通）技能。
-  const setAllHint = (level, whiteOnly = false) => {
+  // 清空当前结果表里所有技能的 Hint
+  const clearAllHint = () => {
+    setHints((current) => {
+      const next = { ...current };
+      for (const row of rows) delete next[row.name];
+      return next;
+    });
+  };
+
+  // 把当前结果表里、名字属于 nameSet 的技能设为某 Hint 等级
+  const setHintForNames = (nameSet, level) => {
     setHints((current) => {
       const next = { ...current };
       for (const row of rows) {
-        if (whiteOnly && row.rarity !== "普通") continue;
-        if (level === null) delete next[row.name];
-        else next[row.name] = level;
+        if (nameSet.has(row.name)) next[row.name] = level;
       }
       return next;
     });
@@ -200,7 +254,7 @@ function App() {
         <div>
           <h1>赛马娘凹分工具</h1>
           <p>
-            技能 {skills.length} · 支援卡 {supportCards.length} · 持有技能 {ownedSkillNames.size} · 结果 {rows.length}
+            马娘 {umaList.length} · 支援卡 {supportCards.length} · 技能 {skills.length} · 持有 {ownedSkillNames.size} · 结果 {rows.length}
           </p>
         </div>
         <button className="button ghost" onClick={reset} type="button">
@@ -212,6 +266,58 @@ function App() {
       <section className="workspace">
         <div className="panel deck-panel">
           <div className="panel-title">
+            <Sparkles size={17} />
+            马娘
+          </div>
+
+          {selectedUma && (
+            <div className="uma-selected">
+              <img className="uma-thumb" src={umaThumb(selectedUma.id)} alt="" onError={hideImg} />
+              <div className="uma-info">
+                <div className="uma-name">{selectedUma.charCn || selectedUma.char}</div>
+                <div className="uma-sub">{selectedUma.name}</div>
+                {selectedUma.unique && (
+                  <div className="uma-unique" title={selectedUma.unique.name}>
+                    固有：{selectedUma.unique.nameCn || selectedUma.unique.name}
+                  </div>
+                )}
+              </div>
+              <button className="button ghost icon-btn" onClick={() => setSelectedUmaId(null)} type="button">
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
+          <div className="searchbox">
+            <Search size={15} />
+            <input
+              value={umaQuery}
+              onChange={(event) => setUmaQuery(event.target.value)}
+              placeholder="搜索马娘（中/日名），选中自动带入适性与自带技能"
+            />
+          </div>
+          <div className="card-list uma-list">
+            {umaResults.map((uma) => {
+              const active = selectedUmaId === uma.id;
+              return (
+                <button
+                  key={uma.id}
+                  className={`uma-row ${active ? "active" : ""}`}
+                  onClick={() => selectUma(uma)}
+                  type="button"
+                >
+                  <img className="card-img" src={umaThumb(uma.id)} alt="" loading="lazy" onError={hideImg} />
+                  <span className="card-names">
+                    <span className="card-name-cn">{uma.charCn || uma.char}</span>
+                    <span className="card-name-jp">{uma.name}</span>
+                  </span>
+                  {active ? <X size={14} /> : <Plus size={14} />}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="panel-title with-sep">
             <Sparkles size={17} />
             支援卡编成
             <span className="deck-count">{deck.length} / {MAX_DECK} 张</span>
@@ -408,10 +514,13 @@ function App() {
               <input type="checkbox" checked={ownedOnly} onChange={(event) => setOwnedOnly(event.target.checked)} />
               仅持有
             </label>
-            <button className="button secondary" onClick={() => setAllHint(5, true)} type="button">
-              白技能 Hint5
+            <button className="button secondary" onClick={() => setHintForNames(cardSkillNames, 5)} type="button">
+              支援卡 Hint5
             </button>
-            <button className="button ghost" onClick={() => setAllHint(null)} type="button">
+            <button className="button secondary" onClick={() => setHintForNames(umaSkillNames, 3)} type="button">
+              马娘自带 Hint3
+            </button>
+            <button className="button ghost" onClick={clearAllHint} type="button">
               清空 Hint
             </button>
           </div>
@@ -450,6 +559,16 @@ function App() {
                     {cnOf(row.name) && <span className="skill-cn">{cnOf(row.name)}</span>}
                   </td>
                   <td className="source-cell">
+                    {selectedUma && umaSkillNames.has(row.name) && (
+                      <img
+                        className="source-img uma"
+                        src={umaIcon(selectedUma.charId)}
+                        alt=""
+                        title={selectedUma.charCn || selectedUma.char}
+                        loading="lazy"
+                        onError={hideImg}
+                      />
+                    )}
                     {(skillToCards.get(row.name) ?? []).map((card) => (
                       <img
                         key={card.id}
@@ -458,9 +577,7 @@ function App() {
                         alt=""
                         title={card.charCn || card.char}
                         loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
+                        onError={hideImg}
                       />
                     ))}
                   </td>
