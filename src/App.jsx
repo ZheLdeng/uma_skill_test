@@ -80,7 +80,15 @@ function App() {
     let list = supportCards;
     if (cardType !== "all") list = list.filter((c) => c.type === cardType);
     if (cardRarity !== "all") list = list.filter((c) => c.rarity === Number(cardRarity));
-    if (needle) list = list.filter((c) => c.name.includes(needle) || c.char.includes(needle));
+    if (needle) {
+      list = list.filter(
+        (c) =>
+          c.name.includes(needle) ||
+          c.char.includes(needle) ||
+          (c.nameCn && c.nameCn.includes(needle)) ||
+          (c.charCn && c.charCn.includes(needle)),
+      );
+    }
     return list.slice(0, 60);
   }, [cardQuery, cardType, cardRarity]);
 
