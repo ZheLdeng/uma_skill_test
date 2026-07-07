@@ -245,11 +245,11 @@ async function main() {
         dist: { 短: apt["短"], 英: apt["英"], 中: apt["中"], 长: apt["长"] },
         style: { 逃: apt["逃"], 先: apt["先"], 差: apt["差"], 追: apt["追"] },
       };
-      // 自带白技能（初期技能，且在本地技能库里）
-      const innate = [];
-      for (const id of c.skills_innate ?? []) {
+      // 自带技能：初期(白) + 觉醒(含金)，且在本地技能库里
+      const umaSkills = [];
+      for (const id of [...(c.skills_innate ?? []), ...(c.skills_awakening ?? [])]) {
         const jp = id2jp.get(id);
-        if (jp && ourSet.has(normName(jp))) innate.push(normName(jp));
+        if (jp && ourSet.has(normName(jp))) umaSkills.push(normName(jp));
       }
       // 固有金技能
       const uJp = id2jp.get((c.skills_unique ?? [])[0]);
@@ -264,7 +264,7 @@ async function main() {
         rarity: Number(c.rarity) || 0,
         release: c.release ?? "",
         aptitude,
-        innate: [...new Set(innate)],
+        skills: [...new Set(umaSkills)],
         unique,
       };
     })

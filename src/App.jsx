@@ -83,7 +83,7 @@ function App() {
   );
 
   const umaSkillNames = useMemo(
-    () => new Set(selectedUma?.innate ?? []),
+    () => new Set(selectedUma?.skills ?? []),
     [selectedUma],
   );
 
