@@ -237,12 +237,12 @@ function App() {
     });
   };
 
-  // 把当前结果表里、名字属于 nameSet 的技能设为某 Hint 等级
-  const setHintForNames = (nameSet, level) => {
+  // 把当前结果表里、名字属于 nameSet 的技能设为某 Hint 等级。whiteOnly：只作用白（普通）技能。
+  const setHintForNames = (nameSet, level, whiteOnly = false) => {
     setHints((current) => {
       const next = { ...current };
       for (const row of rows) {
-        if (nameSet.has(row.name)) next[row.name] = level;
+        if (nameSet.has(row.name) && (!whiteOnly || row.rarity === "普通")) next[row.name] = level;
       }
       return next;
     });
@@ -507,8 +507,8 @@ function App() {
               <input type="checkbox" checked={ownedOnly} onChange={(event) => setOwnedOnly(event.target.checked)} />
               仅持有
             </label>
-            <button className="button secondary" onClick={() => setHintForNames(cardSkillNames, 5)} type="button">
-              支援卡 Hint5
+            <button className="button secondary" onClick={() => setHintForNames(cardSkillNames, 5, true)} type="button">
+              支援卡白 Hint5
             </button>
             <button className="button secondary" onClick={() => setHintForNames(umaSkillNames, 3)} type="button">
               马娘自带 Hint3
