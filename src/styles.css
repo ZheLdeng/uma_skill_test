@@ -304,13 +304,40 @@ h1 {
 .manual-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   border: 1px solid #cbe5dc;
-  border-radius: 999px;
-  padding: 4px 9px;
+  border-radius: 8px;
+  padding: 3px 4px 3px 9px;
   background: var(--accent-soft);
   color: #164c45;
   font-size: 12px;
+}
+
+.chip-label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip-hint {
+  width: 40px;
+  height: 24px;
+  padding: 0 4px;
+  text-align: center;
+  border: 1px solid #b7dccf;
+  border-radius: 6px;
+  background: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip-x {
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: #4a7a70;
 }
 
 /* 支援卡筛选与列表 */
@@ -700,6 +727,51 @@ tbody tr:hover {
 }
 
 /* 结果表行底色保持白色，仅用字体色 / 徽章区分技能类型 */
+
+/* PT 预算 */
+.budget-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.budget-box input {
+  width: 84px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 8px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-info {
+  color: var(--text);
+}
+
+.budget-info b {
+  color: var(--accent-strong);
+}
+
+/* 预算内可学的技能：绿色左边条；预算外：淡化 */
+tbody tr.learnable td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+tbody tr.beyond {
+  color: #9aa6a2;
+}
+
+.cum {
+  color: var(--muted);
+}
 
 .skill-name {
   min-width: 180px;

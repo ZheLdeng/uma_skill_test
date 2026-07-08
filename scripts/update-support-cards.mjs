@@ -20,11 +20,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, "../src/data");
 const CARDS_PATH = path.join(DATA_DIR, "support-cards.json");
 const SKILL_CN_PATH = path.join(DATA_DIR, "skill-cn.json");
-const SKILL_COLOR_PATH = path.join(DATA_DIR, "skill-color.json");
 const SKILLS_PATH = path.join(DATA_DIR, "skills.json");
 const UMA_PATH = path.join(DATA_DIR, "uma.json");
-
-const COLOR_MAP = { 绿色: "green", 红色: "red" }; // 只关心被动绿 / 妨碍红
 
 // 适性数组（GameTora character-cards.aptitude）顺序 -> 我们的 adaptability 结构
 const APT_ORDER = ["芝", "泥", "短", "英", "中", "长", "逃", "先", "差", "追"];
@@ -187,26 +184,22 @@ async function main() {
   const ourSkills = JSON.parse(fs.readFileSync(SKILLS_PATH, "utf8"));
   const ourSet = new Set(ourSkills.map((o) => normName(o.n)));
 
-  // 技能中日对照 + 颜色：jp -> 简中 / green|red（bwiki 按日文名直接对应）
+  // 技能中日对照：jp -> 简中（bwiki 按日文名直接对应）。技能颜色由 update-skills 从 gamewith 生成。
   const skillCn = {};
-  const skillColor = {};
   for (const o of ourSkills) {
     const jp = normName(o.n);
     const info = skillCnByJp.get(jp);
     if (info?.cn) skillCn[jp] = info.cn;
-    const col = COLOR_MAP[info?.color];
-    if (col) skillColor[jp] = col;
   }
-  // ◎ 档若缺，用 ○ 版推导
+  // ◎ 档若缺，用 ○ 版推导中文名
   for (const o of ourSkills) {
     const n = normName(o.n);
     if (n.endsWith("◎")) {
       const low = `${n.slice(0, -1)}○`;
       if (!skillCn[n] && skillCn[low]) skillCn[n] = skillCn[low].replace(/○$/, "◎");
-      if (!skillColor[n] && skillColor[low]) skillColor[n] = skillColor[low];
     }
   }
-  console.log(`[data] 技能中日对照 ${Object.keys(skillCn).length}/${ourSkills.length}，颜色标注 ${Object.keys(skillColor).length}`);
+  console.log(`[data] 技能中日对照 ${Object.keys(skillCn).length}/${ourSkills.length}`);
 
   // 支援卡
   let skipped = 0;
@@ -294,9 +287,8 @@ async function main() {
   }
   fs.writeFileSync(CARDS_PATH, JSON.stringify(out, null, 2) + "\n", "utf8");
   fs.writeFileSync(SKILL_CN_PATH, JSON.stringify(skillCn, null, 2) + "\n", "utf8");
-  fs.writeFileSync(SKILL_COLOR_PATH, JSON.stringify(skillColor, null, 2) + "\n", "utf8");
   fs.writeFileSync(UMA_PATH, JSON.stringify(umaOut, null, 2) + "\n", "utf8");
-  console.log(`\n[data] 已写入:\n  ${CARDS_PATH}\n  ${SKILL_CN_PATH}\n  ${SKILL_COLOR_PATH}\n  ${UMA_PATH}`);
+  console.log(`\n[data] 已写入:\n  ${CARDS_PATH}\n  ${SKILL_CN_PATH}\n  ${UMA_PATH}`);
 }
 
 main().catch((error) => {

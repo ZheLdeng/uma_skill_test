@@ -99,6 +99,8 @@ export function calculateSkillRows({
   adaptability,
 }) {
   const discounts = hasCut ? DISCOUNTS_CUT : DISCOUNTS_NORMAL;
+  const skillByName = new Map(skills.map((item) => [item.n, item]));
+  const rateOf = (name) => discounts[hints[name] ?? 0] ?? discounts[0];
 
   return skills.map((skill) => {
     const hint = hints[skill.n] ?? 0;
@@ -112,25 +114,20 @@ export function calculateSkillRows({
     const testScore =
       skill.r === "传说" ? adaptabilityScore + 1200 : adaptabilityScore + 400;
 
-    const lowerSkillName = upgradeMap[skill.n];
-    let currentPrice;
-
-    if (lowerSkillName) {
-      const lowerSkill = skills.find((item) => item.n === lowerSkillName);
-      if (lowerSkill) {
-        const lowerHint = hints[lowerSkill.n];
-        const lowerDiscountRate =
-          lowerHint === undefined ? discounts[0] : discounts[lowerHint];
-        currentPrice = round1(
-          (skill.p - lowerSkill.p) * discountRate
-            + lowerSkill.p * lowerDiscountRate,
-        );
-      } else {
-        currentPrice = round1(skill.p * discountRate);
-      }
-    } else {
-      currentPrice = round1(skill.p * discountRate);
+    // 沿升级链逐级累加：每一级只算它自身增量 PT，并各自套用该级的 Hint 折扣。
+    // 例：右回りの鬼 → 右回り◎ → 右回り○，金技能的现价包含所有下位。
+    // chain 记录每一级的独立成本，供预算累计时去重（金技能已含的下位不重复计）。
+    const chain = [];
+    let node = skill;
+    let guard = 0;
+    while (node && guard < 12) {
+      guard += 1;
+      const lower = skillByName.get(upgradeMap[node.n]);
+      const ownPt = lower ? node.p - lower.p : node.p;
+      chain.push({ name: node.n, cost: round1(Math.max(0, ownPt) * rateOf(node.n)) });
+      node = lower;
     }
+    const currentPrice = round1(chain.reduce((sum, item) => sum + item.cost, 0));
 
     const numerator = mode === "test" ? testScore : adaptabilityScore;
     const costPerformance =
@@ -148,6 +145,7 @@ export function calculateSkillRows({
       discountRate,
       currentPrice,
       costPerformance,
+      chain,
       source: skill,
     };
   });

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Plus, RotateCcw, Search, Sparkles, X } from "lucide-react";
 import skills from "./data/skills.json";
 import upgradeMap from "./data/upgrade-map.json";
@@ -15,7 +15,17 @@ const umaThumb = (id) =>
 const umaIcon = (charId) =>
   `https://gametora.com/images/umamusume/characters/icons/chr_icon_${charId}.png`;
 const cnOf = (name) => skillCn[name] ?? "";
+// 技能颜色来自 gamewith（green=回复/被动，red=妨碍，蓝色默认）
 const colorOf = (name) => skillColor[name] ?? "";
+
+const STORAGE_KEY = "uma-tool-state";
+const loadSaved = () => {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
 const hideImg = (e) => {
   e.currentTarget.style.display = "none";
 };
@@ -52,15 +62,16 @@ const CARD_RARITY_LABELS = { 3: "SSR", 2: "SR", 1: "R" };
 const cloneAdaptability = () => JSON.parse(JSON.stringify(DEFAULT_ADAPTABILITY));
 
 function App() {
-  const [mode, setMode] = useState("scoring");
-  const [hasCut, setHasCut] = useState(false);
-  const [adaptability, setAdaptability] = useState(cloneAdaptability);
-  const [hints, setHints] = useState({});
+  const saved = useMemo(loadSaved, []);
+  const [mode, setMode] = useState(saved.mode ?? "scoring");
+  const [hasCut, setHasCut] = useState(saved.hasCut ?? false);
+  const [adaptability, setAdaptability] = useState(saved.adaptability ?? cloneAdaptability);
+  const [hints, setHints] = useState(saved.hints ?? {});
 
-  const [selectedUmaId, setSelectedUmaId] = useState(null);
+  const [selectedUmaId, setSelectedUmaId] = useState(saved.selectedUmaId ?? null);
   const [umaQuery, setUmaQuery] = useState("");
-  const [deck, setDeck] = useState([]); // 选中的支援卡 id
-  const [manualSkills, setManualSkills] = useState([]); // 手动添加的技能名
+  const [deck, setDeck] = useState(saved.deck ?? []); // 选中的支援卡 id
+  const [manualSkills, setManualSkills] = useState(saved.manualSkills ?? []); // 手动添加的技能名
   const [cardQuery, setCardQuery] = useState("");
   const [cardType, setCardType] = useState("all");
   const [cardRarity, setCardRarity] = useState("all");
@@ -70,9 +81,22 @@ function App() {
   const [rarity, setRarity] = useState("all");
   const [sort, setSort] = useState("costPerformanceDesc");
   const [ownedOnly, setOwnedOnly] = useState(true);
+  const [budget, setBudget] = useState(saved.budget ?? "");
 
   const cardById = useMemo(() => new Map(supportCards.map((c) => [c.id, c])), []);
   const skillNameSet = useMemo(() => new Set(skills.map((s) => s.n)), []);
+
+  // 记住卡组 / 马娘 / 手动技能等（仅本机 localStorage）
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ mode, hasCut, adaptability, hints, selectedUmaId, deck, manualSkills, budget }),
+      );
+    } catch {
+      // 忽略无痕模式等写入失败
+    }
+  }, [mode, hasCut, adaptability, hints, selectedUmaId, deck, manualSkills, budget]);
 
   const selectedCards = useMemo(
     () => deck.map((id) => cardById.get(id)).filter(Boolean),
@@ -160,7 +184,7 @@ function App() {
 
     if (query.trim()) {
       const needle = query.trim();
-      next = next.filter((row) => row.name.includes(needle));
+      next = next.filter((row) => row.name.includes(needle) || cnOf(row.name).includes(needle));
     }
     if (rarity !== "all") next = next.filter((row) => row.rarity === rarity);
     if (ownedOnly) next = next.filter((row) => ownedSkillNames.has(row.name));
@@ -183,6 +207,27 @@ function App() {
     }
     return next;
   }, [adaptability, hasCut, hints, mode, ownedOnly, ownedSkillNames, query, rarity, sort]);
+
+  // 按当前排序累加现价，标出预算能学到哪为止
+  const budgetNum = Number(budget) || 0;
+  const displayRows = useMemo(() => {
+    let cum = 0;
+    const paid = new Set(); // 已计入的升级链节点，避免金技能与其下位重复计价
+    return rows.map((row) => {
+      let inc = 0;
+      for (const node of row.chain ?? [{ name: row.name, cost: row.currentPrice }]) {
+        if (!paid.has(node.name)) {
+          inc += node.cost;
+          paid.add(node.name);
+        }
+      }
+      cum += inc;
+      const cumPt = Math.round(cum * 10) / 10;
+      return { ...row, cumPt, learnable: budgetNum > 0 && cumPt <= budgetNum };
+    });
+  }, [rows, budgetNum]);
+  const learnableCount = displayRows.filter((r) => r.learnable).length;
+  const totalCost = displayRows.length ? displayRows[displayRows.length - 1].cumPt : 0;
 
   const toggleCard = (id) =>
     setDeck((current) => {
@@ -478,16 +523,21 @@ function App() {
           {manualSkills.length > 0 && (
             <div className="manual-chips">
               {manualSkills.map((name) => (
-                <button
-                  key={name}
-                  className="manual-chip"
-                  onClick={() => removeManualSkill(name)}
-                  title={cnOf(name) ? `${cnOf(name)} / ${name}` : name}
-                  type="button"
-                >
-                  {cnOf(name) || name}
-                  <X size={12} />
-                </button>
+                <span key={name} className="manual-chip" title={cnOf(name) ? `${cnOf(name)} / ${name}` : name}>
+                  <span className="chip-label">{cnOf(name) || name}</span>
+                  <input
+                    className="chip-hint"
+                    type="number"
+                    min="0"
+                    max="5"
+                    value={hints[name] ?? ""}
+                    placeholder="Lv"
+                    onChange={(event) => updateHint(name, event.target.value)}
+                  />
+                  <button className="chip-x" onClick={() => removeManualSkill(name)} type="button">
+                    <X size={12} />
+                  </button>
+                </span>
               ))}
             </div>
           )}
@@ -522,6 +572,21 @@ function App() {
             <button className="button ghost" onClick={clearAllHint} type="button">
               清空 Hint
             </button>
+            <div className="budget-box">
+              <span>可用 PT</span>
+              <input
+                type="number"
+                min="0"
+                value={budget}
+                onChange={(event) => setBudget(event.target.value)}
+                placeholder="预算"
+              />
+              {budgetNum > 0 && (
+                <span className="budget-info">
+                  可学 <b>{learnableCount}</b> 个 · 全学需 {Math.round(totalCost)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -540,17 +605,17 @@ function App() {
                 <th>{mode === "test" ? "技能测验分" : "适性评价分"}</th>
                 <th>Hint</th>
                 <th>现价</th>
+                <th>累计</th>
                 <th>{mode === "test" ? "性价比" : "性价比（凹分）"}</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {displayRows.map((row) => (
                 <tr
                   key={row.name}
                   className={[
-                    ownedSkillNames.has(row.name) ? "detected" : "",
-                    row.rarity === "传说" ? "legend" : "",
-                    row.name.endsWith("◎") ? "double-circle" : "",
+                    row.learnable ? "learnable" : "",
+                    budgetNum > 0 && !row.learnable ? "beyond" : "",
                   ].join(" ")}
                 >
                   <td
@@ -607,12 +672,13 @@ function App() {
                     />
                   </td>
                   <td className="num">{formatNumber(row.currentPrice)}</td>
+                  <td className="num cum">{row.cumPt}</td>
                   <td className="num score">{row.costPerformance.toFixed(2)}</td>
                 </tr>
               ))}
               {!rows.length && (
                 <tr>
-                  <td colSpan="10" className="empty">
+                  <td colSpan="11" className="empty">
                     {ownedOnly ? "先选支援卡或手动添加技能" : "没有匹配的技能"}
                   </td>
                 </tr>

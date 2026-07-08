@@ -18,6 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, "../src/data");
 const SKILLS_PATH = path.join(DATA_DIR, "skills.json");
 const UPGRADE_PATH = path.join(DATA_DIR, "upgrade-map.json");
+const SKILL_COLOR_PATH = path.join(DATA_DIR, "skill-color.json");
 const SOURCE_URL = "https://gamewith.jp/uma-musume/article/show/279309";
 
 const DRY_RUN = process.argv.includes("--dry");
@@ -71,6 +72,14 @@ function parseSkillDatas(html) {
   return arr;
 }
 
+// gamewith 的 t 字段 -> 技能颜色：2/3=绿(回复/被动)、4=红(妨碍)、其余=蓝(主动)
+function colorFromT(t) {
+  const n = Number(t);
+  if (n === 2 || n === 3) return "green";
+  if (n === 4) return "red";
+  return "";
+}
+
 function conditionsFromR(r) {
   if (r === undefined || r === null || r === "") return ["通用", ""];
   const parts = String(r)
@@ -101,8 +110,8 @@ function buildSkills(skillDatas) {
       const highName = `${base}◎`;
       formValues.set(lowName, { ap: apLow, pt: ptLow });
       formValues.set(highName, { ap: apLow + apInc, pt: ptLow + ptInc });
-      baseRows.push({ name: lowName, ap: apLow, pt: ptLow, c: o.c, r: o.r });
-      baseRows.push({ name: highName, ap: apLow + apInc, pt: ptLow + ptInc, c: o.c, r: o.r });
+      baseRows.push({ name: lowName, ap: apLow, pt: ptLow, c: o.c, r: o.r, col: colorFromT(o.t) });
+      baseRows.push({ name: highName, ap: apLow + apInc, pt: ptLow + ptInc, c: o.c, r: o.r, col: colorFromT(o.t) });
     } else {
       const name = normName(o.n);
       formValues.set(name, { ap: Number(o.ap), pt: Number(o.pt) });
@@ -113,6 +122,7 @@ function buildSkills(skillDatas) {
         c: o.c,
         r: o.r,
         p: o.p ? normName(o.p) : undefined,
+        col: colorFromT(o.t),
       });
     }
   }
@@ -152,6 +162,7 @@ function buildSkills(skillDatas) {
       e: evalScore,
       p: price,
       t: testScore,
+      col: row.col, // 技能颜色：green(被动/回复) / red(妨碍) / ""(蓝-主动)
       c1,
       c2,
     });
@@ -215,9 +226,19 @@ async function main() {
     return;
   }
 
+  // 技能颜色（gamewith t）：green / red，蓝色默认不写入
+  const skillColor = {};
+  for (const s of skills) {
+    if (s.col) skillColor[s.n] = s.col;
+  }
+
   fs.writeFileSync(SKILLS_PATH, JSON.stringify(skills, null, 2) + "\n", "utf8");
   fs.writeFileSync(UPGRADE_PATH, JSON.stringify(upgradeMap, null, 2) + "\n", "utf8");
-  console.log(`\n[update-skills] 已写入:\n  ${SKILLS_PATH}\n  ${UPGRADE_PATH}`);
+  fs.writeFileSync(SKILL_COLOR_PATH, JSON.stringify(skillColor, null, 2) + "\n", "utf8");
+  console.log(
+    `\n[update-skills] 已写入:\n  ${SKILLS_PATH}\n  ${UPGRADE_PATH}\n  ${SKILL_COLOR_PATH}` +
+      `\n[update-skills] 颜色标注 green/red: ${Object.keys(skillColor).length}`,
+  );
 }
 
 main().catch((error) => {
