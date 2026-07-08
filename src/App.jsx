@@ -4,6 +4,7 @@ import skills from "./data/skills.json";
 import upgradeMap from "./data/upgrade-map.json";
 import supportCards from "./data/support-cards.json";
 import skillCn from "./data/skill-cn.json";
+import skillColor from "./data/skill-color.json";
 import umaList from "./data/uma.json";
 
 const MAX_DECK = 6;
@@ -14,6 +15,7 @@ const umaThumb = (id) =>
 const umaIcon = (charId) =>
   `https://gametora.com/images/umamusume/characters/icons/chr_icon_${charId}.png`;
 const cnOf = (name) => skillCn[name] ?? "";
+const colorOf = (name) => skillColor[name] ?? "";
 const hideImg = (e) => {
   e.currentTarget.style.display = "none";
 };
@@ -198,10 +200,21 @@ function App() {
     if (uma.aptitude) setAdaptability(JSON.parse(JSON.stringify(uma.aptitude)));
   };
 
-  const toggleManualSkill = (name) =>
-    setManualSkills((current) =>
-      current.includes(name) ? current.filter((x) => x !== name) : [...current, name],
-    );
+  const toggleManualSkill = (name) => {
+    // 带双圈的技能（○/◎ 同名）联动：选/取消一个时另一个跟随
+    const names = [name];
+    if (name.endsWith("○") && skillNameSet.has(`${name.slice(0, -1)}◎`)) {
+      names.push(`${name.slice(0, -1)}◎`);
+    } else if (name.endsWith("◎") && skillNameSet.has(`${name.slice(0, -1)}○`)) {
+      names.push(`${name.slice(0, -1)}○`);
+    }
+    setManualSkills((current) => {
+      if (current.includes(name)) return current.filter((x) => !names.includes(x));
+      const set = new Set(current);
+      for (const n of names) set.add(n);
+      return [...set];
+    });
+  };
   const removeManualSkill = (name) =>
     setManualSkills((current) => current.filter((x) => x !== name));
 
@@ -388,54 +401,6 @@ function App() {
             })}
             {!cardResults.length && <div className="empty">没有匹配的支援卡</div>}
           </div>
-
-          <div className="panel-subtitle">手动添加技能</div>
-          <div className="searchbox">
-            <Search size={15} />
-            <input
-              value={skillQuery}
-              onChange={(event) => setSkillQuery(event.target.value)}
-              placeholder="搜索技能名后点击添加"
-            />
-          </div>
-          {skillResults.length > 0 && (
-            <div className="skill-suggest">
-              {skillResults.map((skill) => {
-                const picked = manualSkills.includes(skill.n);
-                return (
-                  <button
-                    key={skill.n}
-                    className={`suggest-item ${picked ? "active" : ""}`}
-                    onClick={() => toggleManualSkill(skill.n)}
-                    type="button"
-                  >
-                    {picked ? <X size={13} /> : <Plus size={13} />}
-                    <span className="suggest-name">
-                      {skill.n}
-                      {cnOf(skill.n) && <em className="suggest-cn">{cnOf(skill.n)}</em>}
-                    </span>
-                    <span className="suggest-meta">{skill.r === "传说" ? "金" : "白"}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {manualSkills.length > 0 && (
-            <div className="manual-chips">
-              {manualSkills.map((name) => (
-                <button
-                  key={name}
-                  className="manual-chip"
-                  onClick={() => removeManualSkill(name)}
-                  title={cnOf(name) ? `${cnOf(name)} / ${name}` : name}
-                  type="button"
-                >
-                  {cnOf(name) || name}
-                  <X size={12} />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="panel controls">
@@ -471,6 +436,61 @@ function App() {
           <AptitudeGroup title="场地" group="track" labels={TRACKS} values={adaptability.track} onChange={updateAdaptability} />
           <AptitudeGroup title="距离" group="dist" labels={DISTANCES} values={adaptability.dist} onChange={updateAdaptability} />
           <AptitudeGroup title="脚质" group="style" labels={STYLES} values={adaptability.style} onChange={updateAdaptability} />
+
+          <div className="panel-subtitle">手动添加技能</div>
+          <div className="manual-add">
+            <div className="searchbox">
+              <Search size={15} />
+              <input
+                value={skillQuery}
+                onChange={(event) => setSkillQuery(event.target.value)}
+                placeholder="搜索技能名（中/日），可多选"
+              />
+              {skillQuery && (
+                <button className="clear-btn" onClick={() => setSkillQuery("")} type="button">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            {skillResults.length > 0 && (
+              <div className="skill-popup">
+                {skillResults.map((skill) => {
+                  const picked = manualSkills.includes(skill.n);
+                  return (
+                    <button
+                      key={skill.n}
+                      className={`suggest-item ${picked ? "active" : ""}`}
+                      onClick={() => toggleManualSkill(skill.n)}
+                      type="button"
+                    >
+                      {picked ? <X size={13} /> : <Plus size={13} />}
+                      <span className="suggest-name">
+                        {skill.n}
+                        {cnOf(skill.n) && <em className="suggest-cn">{cnOf(skill.n)}</em>}
+                      </span>
+                      <span className="suggest-meta">{skill.r === "传说" ? "金" : "白"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {manualSkills.length > 0 && (
+            <div className="manual-chips">
+              {manualSkills.map((name) => (
+                <button
+                  key={name}
+                  className="manual-chip"
+                  onClick={() => removeManualSkill(name)}
+                  title={cnOf(name) ? `${cnOf(name)} / ${name}` : name}
+                  type="button"
+                >
+                  {cnOf(name) || name}
+                  <X size={12} />
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="toolbar">
             <div className="searchbox">
@@ -533,7 +553,11 @@ function App() {
                     row.name.endsWith("◎") ? "double-circle" : "",
                   ].join(" ")}
                 >
-                  <td className={`skill-name ${row.rarity === "传说" ? "gold" : ""}`}>
+                  <td
+                    className={`skill-name ${
+                      colorOf(row.name) || (row.rarity === "传说" ? "gold" : "")
+                    }`}
+                  >
                     {row.name}
                     {cnOf(row.name) && <span className="skill-cn">{cnOf(row.name)}</span>}
                   </td>

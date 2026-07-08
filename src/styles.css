@@ -470,13 +470,46 @@ h1 {
 }
 
 /* 手动技能搜索建议 */
-.skill-suggest {
+/* 手动添加技能：搜索结果做成浮层弹窗，不撑开页面 */
+.manual-add {
+  position: relative;
+}
+
+.manual-add .searchbox {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
+
+.clear-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.skill-popup {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: 8px;
-  max-height: 260px;
+  max-height: 320px;
   overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
 }
 
 .suggest-item.active {
@@ -630,8 +663,8 @@ select,
 }
 
 .table-wrap {
-  max-height: calc(100vh - 450px);
-  min-height: 360px;
+  max-height: calc(100vh - 180px);
+  min-height: 660px;
   overflow: auto;
 }
 
@@ -666,17 +699,7 @@ tbody tr:hover {
   background: #f7faf8;
 }
 
-tbody tr.detected {
-  background: var(--accent-soft);
-}
-
-tbody tr.legend:not(.detected) {
-  background: var(--gold);
-}
-
-tbody tr.double-circle:not(.detected):not(.legend) {
-  background: var(--blue);
-}
+/* 结果表行底色保持白色，仅用字体色 / 徽章区分技能类型 */
 
 .skill-name {
   min-width: 180px;
@@ -685,6 +708,15 @@ tbody tr.double-circle:not(.detected):not(.legend) {
 
 .skill-name.gold {
   color: #9a6b00;
+}
+
+/* 被动绿技能 / 妨碍红技能 字体色 */
+.skill-name.green {
+  color: #1c8a4e;
+}
+
+.skill-name.red {
+  color: #c0392b;
 }
 
 .source-cell {

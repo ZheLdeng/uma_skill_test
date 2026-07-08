@@ -20,8 +20,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, "../src/data");
 const CARDS_PATH = path.join(DATA_DIR, "support-cards.json");
 const SKILL_CN_PATH = path.join(DATA_DIR, "skill-cn.json");
+const SKILL_COLOR_PATH = path.join(DATA_DIR, "skill-color.json");
 const SKILLS_PATH = path.join(DATA_DIR, "skills.json");
 const UMA_PATH = path.join(DATA_DIR, "uma.json");
+
+const COLOR_MAP = { 绿色: "green", 红色: "red" }; // 只关心被动绿 / 妨碍红
 
 // 适性数组（GameTora character-cards.aptitude）顺序 -> 我们的 adaptability 结构
 const APT_ORDER = ["芝", "泥", "短", "英", "中", "长", "逃", "先", "差", "追"];
@@ -126,14 +129,15 @@ async function fetchBwikiUmaCn() {
   return map;
 }
 
-/** 技能：日文名 -> 简体中文名（bwiki Template:技能，覆盖日服技能）。 */
+/** 技能：日文名 -> { cn 中文名, color 图标颜色 }（bwiki Template:技能，覆盖日服技能）。 */
 async function fetchBwikiSkillCn() {
   const pages = await fetchBwikiPages("Template:技能");
   const map = new Map();
   for (const content of pages) {
     const jp = tplField(content, "技能名");
     const cn = tplField(content, "中文名");
-    if (jp && cn) map.set(normName(jp), cn);
+    const color = tplField(content, "图标颜色"); // 绿色/红色/黄色/蓝色
+    if (jp) map.set(normName(jp), { cn, color });
   }
   return map;
 }
@@ -183,21 +187,26 @@ async function main() {
   const ourSkills = JSON.parse(fs.readFileSync(SKILLS_PATH, "utf8"));
   const ourSet = new Set(ourSkills.map((o) => normName(o.n)));
 
-  // 技能中日对照：jp -> 简中（bwiki 按日文名直接对应）
+  // 技能中日对照 + 颜色：jp -> 简中 / green|red（bwiki 按日文名直接对应）
   const skillCn = {};
+  const skillColor = {};
   for (const o of ourSkills) {
     const jp = normName(o.n);
-    const cn = skillCnByJp.get(jp);
-    if (cn) skillCn[jp] = cn;
+    const info = skillCnByJp.get(jp);
+    if (info?.cn) skillCn[jp] = info.cn;
+    const col = COLOR_MAP[info?.color];
+    if (col) skillColor[jp] = col;
   }
   // ◎ 档若缺，用 ○ 版推导
   for (const o of ourSkills) {
     const n = normName(o.n);
-    if (skillCn[n] || !n.endsWith("◎")) continue;
-    const low = `${n.slice(0, -1)}○`;
-    if (skillCn[low]) skillCn[n] = skillCn[low].replace(/○$/, "◎");
+    if (n.endsWith("◎")) {
+      const low = `${n.slice(0, -1)}○`;
+      if (!skillCn[n] && skillCn[low]) skillCn[n] = skillCn[low].replace(/○$/, "◎");
+      if (!skillColor[n] && skillColor[low]) skillColor[n] = skillColor[low];
+    }
   }
-  console.log(`[data] 技能中日对照 ${Object.keys(skillCn).length}/${ourSkills.length}`);
+  console.log(`[data] 技能中日对照 ${Object.keys(skillCn).length}/${ourSkills.length}，颜色标注 ${Object.keys(skillColor).length}`);
 
   // 支援卡
   let skipped = 0;
@@ -253,7 +262,7 @@ async function main() {
       }
       // 固有金技能
       const uJp = id2jp.get((c.skills_unique ?? [])[0]);
-      const unique = uJp ? { name: uJp, nameCn: skillCnByJp.get(normName(uJp)) ?? "" } : null;
+      const unique = uJp ? { name: uJp, nameCn: skillCnByJp.get(normName(uJp))?.cn ?? "" } : null;
 
       return {
         id: c.card_id,
@@ -285,8 +294,9 @@ async function main() {
   }
   fs.writeFileSync(CARDS_PATH, JSON.stringify(out, null, 2) + "\n", "utf8");
   fs.writeFileSync(SKILL_CN_PATH, JSON.stringify(skillCn, null, 2) + "\n", "utf8");
+  fs.writeFileSync(SKILL_COLOR_PATH, JSON.stringify(skillColor, null, 2) + "\n", "utf8");
   fs.writeFileSync(UMA_PATH, JSON.stringify(umaOut, null, 2) + "\n", "utf8");
-  console.log(`\n[data] 已写入:\n  ${CARDS_PATH}\n  ${SKILL_CN_PATH}\n  ${UMA_PATH}`);
+  console.log(`\n[data] 已写入:\n  ${CARDS_PATH}\n  ${SKILL_CN_PATH}\n  ${SKILL_COLOR_PATH}\n  ${UMA_PATH}`);
 }
 
 main().catch((error) => {
