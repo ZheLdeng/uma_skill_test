@@ -23,7 +23,9 @@ const ADAPTABILITY_MULTIPLIERS = {
 // hint 0..5 对应的现价折扣系数。
 // 无切者：1级 10%off、2级 20%、3级 30%、4级 35%、满级(5) 40%。
 export const DISCOUNTS_NORMAL = [1, 0.9, 0.8, 0.7, 0.65, 0.6];
-// 有切者：整体再便宜一档，最低到 50%off。
+// 小切：在普通 Hint 折扣基础上额外减 4 个百分点。
+export const DISCOUNTS_SMALL_CUT = [0.96, 0.86, 0.76, 0.66, 0.61, 0.56];
+// 切者：在普通 Hint 折扣基础上额外减 10 个百分点。
 export const DISCOUNTS_CUT = [0.9, 0.8, 0.7, 0.6, 0.55, 0.5];
 
 /**
@@ -95,10 +97,11 @@ export function calculateSkillRows({
   upgradeMap,
   hints,
   hasCut,
+  hasSmallCut = false,
   mode,
   adaptability,
 }) {
-  const discounts = hasCut ? DISCOUNTS_CUT : DISCOUNTS_NORMAL;
+  const discounts = hasCut ? DISCOUNTS_CUT : hasSmallCut ? DISCOUNTS_SMALL_CUT : DISCOUNTS_NORMAL;
   const skillByName = new Map(skills.map((item) => [item.n, item]));
   const rateOf = (name) => discounts[hints[name] ?? 0] ?? discounts[0];
 
