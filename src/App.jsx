@@ -65,6 +65,7 @@ function App() {
   const saved = useMemo(loadSaved, []);
   const [mode, setMode] = useState(saved.mode ?? "scoring");
   const [hasCut, setHasCut] = useState(saved.hasCut ?? false);
+  const [hasSmallCut, setHasSmallCut] = useState(saved.hasSmallCut ?? false);
   const [adaptability, setAdaptability] = useState(saved.adaptability ?? cloneAdaptability);
   const [hints, setHints] = useState(saved.hints ?? {});
 
@@ -91,12 +92,12 @@ function App() {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ mode, hasCut, adaptability, hints, selectedUmaId, deck, manualSkills, budget }),
+        JSON.stringify({ mode, hasCut, hasSmallCut, adaptability, hints, selectedUmaId, deck, manualSkills, budget }),
       );
     } catch {
       // 忽略无痕模式等写入失败
     }
-  }, [mode, hasCut, adaptability, hints, selectedUmaId, deck, manualSkills, budget]);
+  }, [mode, hasCut, hasSmallCut, adaptability, hints, selectedUmaId, deck, manualSkills, budget]);
 
   const selectedCards = useMemo(
     () => deck.map((id) => cardById.get(id)).filter(Boolean),
@@ -180,7 +181,7 @@ function App() {
   }, [skillQuery]);
 
   const rows = useMemo(() => {
-    let next = calculateSkillRows({ skills, upgradeMap, hints, hasCut, mode, adaptability });
+    let next = calculateSkillRows({ skills, upgradeMap, hints, hasCut, hasSmallCut, mode, adaptability });
 
     if (query.trim()) {
       const needle = query.trim();
@@ -282,6 +283,7 @@ function App() {
     setManualSkills([]);
     setHints({});
     setHasCut(false);
+    setHasSmallCut(false);
     setAdaptability(cloneAdaptability());
   };
 
@@ -456,12 +458,15 @@ function App() {
 
           <div className="control-row">
             <span>切者</span>
-            <div className="segmented two">
-              <button className={!hasCut ? "active" : ""} onClick={() => setHasCut(false)} type="button">
-                0
+            <div className="segmented">
+              <button className={!hasCut && !hasSmallCut ? "active" : ""} onClick={() => { setHasCut(false); setHasSmallCut(false); }} type="button">
+                无
               </button>
-              <button className={hasCut ? "active" : ""} onClick={() => setHasCut(true)} type="button">
-                1
+              <button className={hasSmallCut ? "active" : ""} onClick={() => { setHasCut(false); setHasSmallCut(true); }} type="button">
+                小切 4%
+              </button>
+              <button className={hasCut ? "active" : ""} onClick={() => { setHasCut(true); setHasSmallCut(false); }} type="button">
+                切者 10%
               </button>
             </div>
           </div>
